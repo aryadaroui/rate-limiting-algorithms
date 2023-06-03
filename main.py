@@ -42,7 +42,7 @@ def experiment(rate_limiter: Callable, rate_lmiter_args: dict, plotter: Callable
 	plotter(data, 'Py')
 	globals.cache.reset()
 
-RPS = 10  # requests per second
+RPS = 9.5  # requests per second
 RPS_THRESHOLD = 5  # max requests per second to allow
 DURATION = 2  # seconds
 WINDOW_LENGTH_MS = 1000  # millisecond

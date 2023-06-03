@@ -30,7 +30,7 @@ def plot_discrete_window(data: dict, title_append='') -> None:
 				name = f"saturation, window {window}",
 				mode = "lines",
 				line_color = "slateblue",
-				opacity = 0.5
+				opacity = 0.7
 			)
 		)
 
@@ -92,20 +92,27 @@ def plot_discrete_window(data: dict, title_append='') -> None:
 		fig.add_vrect(
 		    x0 = first_ok_time,
 		    x1 = first_ok_time + data['experiment']['window_length_ms'] / 1000,
-		    fillcolor = "black",
-		    opacity = 0.2,
+		    fillcolor = "gray",
+		    opacity = 0.05,
 		    layer = "below",
 		    line_width = 0,
 		)
 
-		fig.add_vline(x = first_ok_time, line_width = 2, line_color = "darkgreen", layer = "below", opacity = 0.8, line_dash = "dot")
+		fig.add_vline(
+			x = first_ok_time, 
+			line_width = 2, 
+			line_color = "darkgreen", 
+			layer = "below", 
+			opacity = 0.5, 
+			line_dash = "solid"
+		)
 
 		fig.add_vline(
 		    x = first_ok_time + data['experiment']['window_length_ms'] / 1000,
 		    line_width = 2,
 		    line_color = "darkred",
 		    layer = "below",
-		    opacity = 0.8,
+		    opacity = 0.5,
 		    line_dash = "solid",
 		)
 
@@ -122,8 +129,94 @@ def plot_discrete_window(data: dict, title_append='') -> None:
 
 def plot_exclusion_window(data: dict, title_append='') -> None:
 	"""Plot the exclusion window data"""
-	pass
 
+	df = pd.DataFrame(data['plot'])
+	fig = go.Figure()
+
+	df['time'] = df['time_ms'] / 1000  # convert to seconds
+	pprint(df)
+
+	# the OKs
+	fig.add_trace(
+	    go.Scatter(
+	        x = df[df['status'] == "OK"]['time'],
+	        # choose y to be 0 for all OKs
+	        y = [0] * len(df[df['status'] == "OK"]['time']),
+	        name = "OK",
+	        mode = "markers",
+	        marker = dict(
+	            color = "darkturquoise",
+	            size = 10,
+	        ),
+	    )
+	)
+
+	# the DENIEDs
+	fig.add_trace(
+	    go.Scatter(
+	        x = df[df['status'] == "DENIED"]['time'],
+	        # choose y to be 0 for all OKs
+	        y = [0] * len(df[df['status'] == "DENIED"]['time']),
+	        name = "DENIED",
+	        mode = "markers",
+	        marker = dict(
+	            color = "crimson",
+	            symbol = "x",
+	            size = 10,
+	        ),
+	    )
+	)
+
+	# the windows
+
+	exclusion_window = 1 / data['experiment']['rps_threshold']
+
+	first_ok_times = df[df['status'] == 'OK'].groupby((df['status'] != df['status'].shift()).cumsum()).first()['time'].tolist()
+	for first_ok_time in first_ok_times:
+		fig.add_vrect(
+		    x0 = first_ok_time,
+		    x1 = first_ok_time + exclusion_window,
+		    fillcolor = "gray",
+		    opacity = 0.05,
+		    layer = "below",
+		    line_width = 0,
+		)
+
+		fig.add_vline(
+			x = first_ok_time,
+			line_width = 2,
+			line_color = "darkgreen",
+			layer = "below",
+			opacity = 0.5,
+			line_dash = "solid"
+		)
+
+		fig.add_vline(
+		    x = first_ok_time + exclusion_window,
+		    line_width = 2,
+		    line_color = "darkred",
+		    layer = "below",
+		    opacity = 0.5,
+		    line_dash = "solid",
+		)
+
+
+
+	fig.update_layout(
+	    title_text = "discrete_window " + title_append,
+	    xaxis_title_text = "time [s]",
+	    yaxis_title_text = "saturation",
+	    template = "plotly_dark",
+	)
+
+	fig.update_layout(
+	    title_text = "exclusion_window " + title_append,
+	    xaxis_title_text = "time [s]",
+	    # yaxis_title_text = "",
+	    template = "plotly_dark",
+	)
+
+	fig.show()
 
 
 def debugger_is_active() -> bool:
