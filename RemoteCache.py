@@ -34,7 +34,7 @@ class RemoteCache:
 		data = self.data.get(key)
 		if not data:
 			return None
-		if data["expiration"] and data["expiration"] < globals.CURRENT_TIME:
+		if 'expiration' in data and data["expiration"] <= globals.CURRENT_TIME:
 			del self.data[key]
 			return None
 		return data["value"]

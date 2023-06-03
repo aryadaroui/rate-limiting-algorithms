@@ -19,7 +19,7 @@ npm run # to run the experiments
 
 | Rate limiting algorithm                                      | TypeScript | Python |
 | ------------------------------------------------------------ | ---------- | ------ |
-| Discrete window                                              | ✅          | ⚠️      |
+| Discrete window                                              | ✅          | ✅      |
 | Enforced average (exclusion window)                          | ⚠️          | ⚠️      |
 | Simple sliding window (don't actually use this in your projects❗️) | ⚠️          | ⚠️      |
 | Extrapolated sliding window                                  | ⚠️          | ⚠️      |

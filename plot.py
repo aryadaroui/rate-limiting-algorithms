@@ -7,16 +7,14 @@ from plotly import graph_objects as go
 
 rich.traceback.install()  # prettier traceback
 
-def debugger_is_active() -> bool:
-	"""Return if the debugger is currently active"""
-	return hasattr(sys, 'gettrace') and sys.gettrace() is not None
-
 def plot_discrete_window(data: dict, title_append='') -> None:
 	"""Plot the discrete window data"""
 
 	df = pd.DataFrame(data['plot'])
-	pprint(df)
 	fig = go.Figure()
+
+	df['time'] = df['time_ms'] / 1000  # convert to seconds
+	pprint(df)
 
 	# the saturation cycles
 	# create a boolean mask for the edge of a window, where the status changes from DENIED to OK.
@@ -93,31 +91,44 @@ def plot_discrete_window(data: dict, title_append='') -> None:
 	for first_ok_time in first_ok_times:
 		fig.add_vrect(
 		    x0 = first_ok_time,
-		    x1 = first_ok_time + data['experiment']['window_length_ms'],
+		    x1 = first_ok_time + data['experiment']['window_length_ms'] / 1000,
 		    fillcolor = "black",
 		    opacity = 0.2,
 		    layer = "below",
 		    line_width = 0,
 		)
 
-		fig.add_vline(x = first_ok_time, line_width = 1, line_color = "darkgreen", layer = "below", opacity = 0.5)
+		fig.add_vline(x = first_ok_time, line_width = 2, line_color = "darkgreen", layer = "below", opacity = 0.8, line_dash = "dot")
 
 		fig.add_vline(
-		    x = first_ok_time + data['experiment']['window_length_ms'],
-		    line_width = 1,
+		    x = first_ok_time + data['experiment']['window_length_ms'] / 1000,
+		    line_width = 2,
 		    line_color = "darkred",
 		    layer = "below",
-		    opacity = 0.5
+		    opacity = 0.8,
+		    line_dash = "solid",
 		)
+
+
 
 	fig.update_layout(
 	    title_text = "discrete_window " + title_append,
-	    xaxis_title_text = "time [ms]",
+	    xaxis_title_text = "time [s]",
 	    yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	)
 
 	fig.show()
+
+def plot_exclusion_window(data: dict, title_append='') -> None:
+	"""Plot the exclusion window data"""
+	pass
+
+
+
+def debugger_is_active() -> bool:
+	"""Return if the debugger is currently active"""
+	return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
 if __name__ == "__main__":
 
