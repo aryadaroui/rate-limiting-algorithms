@@ -31,3 +31,8 @@ export function discrete_window(target: string, threshold: number, window_length
 
 	}
 }
+
+
+// export function exclusion_window(target:string, threshold:number) {
+
+// }

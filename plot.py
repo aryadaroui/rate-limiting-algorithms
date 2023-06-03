@@ -6,15 +6,12 @@ from rich.pretty import pprint
 from plotly import graph_objects as go
 
 rich.traceback.install()  # prettier traceback
-# __builtins__.print = pprint # override print to pprint
-
 
 def debugger_is_active() -> bool:
 	"""Return if the debugger is currently active"""
 	return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
-
-def plot_discrete_window(data: dict) -> None:
+def plot_discrete_window(data: dict, title_append='') -> None:
 	"""Plot the discrete window data"""
 
 	df = pd.DataFrame(data['plot'])
@@ -24,21 +21,20 @@ def plot_discrete_window(data: dict) -> None:
 	# the saturation cycles
 	# create a boolean mask for the edge of a window, where the status changes from DENIED to OK.
 	mask = (df['status'] == 'OK') & (df['status'].shift() == 'DENIED')
-	df['window'] = mask.cumsum() # use cumsum to create a cycle number for each window
+	df['window_num'] = mask.cumsum() # use cumsum to create a cycle number for each window
 
 	# iterate over the unique values in window
-	for window in df['window'].unique():
+	for window in df['window_num'].unique():
 		fig.add_trace(
 			go.Scatter(
-				x = df[df['window'] == window]['time'],
-				y = df[df['window'] == window]['saturation'],
+				x = df[df['window_num'] == window]['time'],
+				y = df[df['window_num'] == window]['saturation'],
 				name = f"saturation, window {window}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.5
 			)
 		)
-
 
 	# the OKs
 	fig.add_trace(
@@ -86,7 +82,7 @@ def plot_discrete_window(data: dict) -> None:
 	    text = "threshold",
 	    showarrow = False,
 	    textangle = 270,
-	    xshift = -20,
+	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
 	    font = dict(color = "tomato",)
@@ -97,7 +93,7 @@ def plot_discrete_window(data: dict) -> None:
 	for first_ok_time in first_ok_times:
 		fig.add_vrect(
 		    x0 = first_ok_time,
-		    x1 = first_ok_time + data['experiment']['window_length'],
+		    x1 = first_ok_time + data['experiment']['window_length_ms'],
 		    fillcolor = "black",
 		    opacity = 0.2,
 		    layer = "below",
@@ -107,7 +103,7 @@ def plot_discrete_window(data: dict) -> None:
 		fig.add_vline(x = first_ok_time, line_width = 1, line_color = "darkgreen", layer = "below", opacity = 0.5)
 
 		fig.add_vline(
-		    x = first_ok_time + data['experiment']['window_length'],
+		    x = first_ok_time + data['experiment']['window_length_ms'],
 		    line_width = 1,
 		    line_color = "darkred",
 		    layer = "below",
@@ -115,12 +111,13 @@ def plot_discrete_window(data: dict) -> None:
 		)
 
 	fig.update_layout(
-	    title_text = "discrete_window",
+	    title_text = "discrete_window " + title_append,
+	    xaxis_title_text = "time [ms]",
+	    yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	)
 
 	fig.show()
-
 
 if __name__ == "__main__":
 
@@ -135,16 +132,10 @@ if __name__ == "__main__":
 	with open(file_path) as f:
 		data: dict = json.load(f)
 
-	plot_discrete_window(data)
+	filename = file_path.split("/")[-1].split(".")[0]
 
-	# # get OKs
-
-	# x: list[int] = list(
-	#     map(lambda d: d['time'], filter(lambda d: d['status'] == "OK", data)))
-	# y: list[int] = list(
-	#     map(lambda d: 0, filter(lambda d: d['status'] == "OK", data)))
-	# # y: list[str] = list(map(lambda d: d['status'], data))
-
-	# fig = go.Figure()
-	# fig.add_trace(go.Scatter(x=x, y=y, mode="markers", name="OK" ))
-	# fig.show()
+	match filename:
+		case "discrete_window":
+			plot_discrete_window(data)
+		case _:
+			raise ValueError(f"No matching plot function for filename: {filename}")
