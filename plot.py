@@ -28,16 +28,16 @@ def plot_discrete_window(data: list[dict]) -> None:
 if __name__ == "__main__":
 
 	if debugger_is_active():
-		filename = "discrete_window.json"
+		file_path = "./data/discrete_window.json"
 	else:
 		if len(sys.argv) < 2:
 			print(
 			    "Please provide the name of the JSON file as a command line argument."
 			)
 			sys.exit(1)
-		filename = sys.argv[1]
+		file_path = sys.argv[1]
 
-	with open(filename) as f:
+	with open(file_path) as f:
 		data: list[dict] = json.load(f)
 
 	# # get OKs
