@@ -13,7 +13,7 @@ This was created to accompany a blog post on rate limiting algorithms, but you c
 To run the experiments:
 ```bash
 npm install # to install dependencies
-npm run # to run the experiments
+npm run start # to run the experiments
 ```
 ## Coverage
 
