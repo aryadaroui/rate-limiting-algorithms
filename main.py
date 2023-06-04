@@ -48,7 +48,7 @@ RPS_THRESHOLD = 5  # max requests per second to allow
 DURATION = 2  # seconds
 WINDOW_LENGTH_MS = 1000  # millisecond
 
-TIMES_MS = generate_times(RPS, DURATION)
+TIMES_MS = generate_times(RPS, DURATION) + [1000 * DURATION + WINDOW_LENGTH_MS + 1] + [1000 * DURATION + WINDOW_LENGTH_MS + 10]
 
 if __name__ == "__main__":
 
@@ -61,6 +61,8 @@ if __name__ == "__main__":
 	# )
 
 	# experiment(exclusion_window, {'key': 'global', 'rps_threshold': RPS_THRESHOLD}, plot_exclusion_window)
+
+
 
 	experiment(
 	    sliding_window, {

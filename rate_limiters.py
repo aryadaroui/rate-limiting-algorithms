@@ -57,7 +57,7 @@ def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -
 		time = entry['time']
 
 		# max(x, 0) prevents x from going negative
-		saturation = max(saturation - (globals.CURRENT_TIME - time) / 1000, 0)
+		saturation = max(saturation - (globals.CURRENT_TIME - time) * (window_length_ms / 1000) / 1000, 0)
 
 		if saturation < threshold:  # increment the saturation
 
