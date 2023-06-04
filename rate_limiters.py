@@ -1,3 +1,4 @@
+import math
 import globals
 cache = globals.cache
 
@@ -31,14 +32,43 @@ def discrete_window(key: str, threshold: float, window_length_ms: float = 1000) 
 		cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
 		return {"status": "OK", "saturation": 0}
 	
-def exclusion_window(target: str, rps_threshold: float):
+def exclusion_window(key: str, rps_threshold: float):
 	'''Rate limits requests for target using exclusion window. Could also be described as enforced average'''
 	exclusion_window = 1000 / rps_threshold
 
-	cache_target = cache.get(target)
+	cache_target = cache.get(key)
 
 	if cache_target is not None:  # target cache entry exists
 		return {"status": "DENIED"}
 	else:  # target cache entry does not exist
-		cache.set(target, 1, exclusion_window)  # set the target cache entry with ttl
+		cache.set(key, 1, exclusion_window)  # set the target cache entry with ttl
 		return {"status": "OK"}
+	
+
+def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -> dict:
+
+	# unpack the cache entry by dict key name. no tuple unpacking funny business
+	entry: dict = cache.get(key)
+
+
+	if entry is not None:  # cache entry exists
+
+		saturation = entry['saturation']
+		time = entry['time']
+
+		# max(x, 0) prevents x from going negative
+		saturation = max(saturation - (globals.CURRENT_TIME - time) / 1000, 0)
+
+		if saturation < threshold:  # increment the saturation
+
+			# update the cache entry
+			cache.set(key, {'saturation': saturation + 1, 'time': globals.CURRENT_TIME}, window_length_ms)  # set the target cache entry with ttl
+			return {"status": "OK", "saturation": saturation + 1}
+		else:  # we hit saturation threshold
+			return {"status": "DENIED", "saturation": saturation}
+
+	else:  #  cache entry does not exist
+		cache.set(key, {'saturation': 1, 'time': globals.CURRENT_TIME}, window_length_ms)  # set the target cache entry with ttl
+		return {"status": "OK", "saturation": 0}
+	
+

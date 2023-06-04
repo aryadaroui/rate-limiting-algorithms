@@ -1,3 +1,4 @@
+from typing import Any
 import globals
 
 class RemoteCache:
@@ -24,7 +25,7 @@ class RemoteCache:
 
 		self.data[key] = {"value": value, "expiration": expiration}
 
-	def get(self, key):
+	def get(self, key: str) -> Any:
 		''' Gets data if it exists and TTL has not expired.
         
         `key`: The key to get.
