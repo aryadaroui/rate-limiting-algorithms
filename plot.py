@@ -119,7 +119,7 @@ def plot_discrete_window(data: dict, title_append='') -> None:
 
 
 	fig.update_layout(
-	    title_text = "discrete_window " + title_append,
+	    title_text = "discrete_window() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    yaxis_title_text = "saturation",
 	    template = "plotly_dark",
@@ -210,7 +210,7 @@ def plot_exclusion_window(data: dict, title_append='') -> None:
 	)
 
 	fig.update_layout(
-	    title_text = "exclusion_window " + title_append,
+	    title_text = "exclusion_window() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    # yaxis_title_text = "",
 	    template = "plotly_dark",
@@ -328,7 +328,7 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 
 
 	fig.update_layout(
-	    title_text = "discrete_window " + title_append,
+	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    yaxis_title_text = "saturation",
 	    template = "plotly_dark",
