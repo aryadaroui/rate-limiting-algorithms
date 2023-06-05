@@ -38,17 +38,18 @@ def experiment(rate_limiter: Callable, rate_lmiter_args: dict, plotter: Callable
 		output["time_ms"] = time_ms
 		data["plot"].append(output)
 
-	pprint(data)
+	# pprint(data)
 	plotter(data, 'Py')
 	globals.cache.reset()
 
 
-RPS = 9.5  # requests per second
-RPS_THRESHOLD = 5  # max requests per second to allow
-DURATION = 2  # seconds
-WINDOW_LENGTH_MS = 1000  # millisecond
+RPS = 10  # requests per second for experiment input
+DURATION = 4  # duration of experiment in seconds
 
-TIMES_MS = generate_times(RPS, DURATION) + [1000 * DURATION + WINDOW_LENGTH_MS + 1] + [1000 * DURATION + WINDOW_LENGTH_MS + 10]
+LIMIT = 5  # max requests allowed
+WINDOW_LENGTH_MS = 1000 # size of the time window in milliseconds
+
+TIMES_MS = generate_times(RPS, DURATION) + [10101]
 
 if __name__ == "__main__":
 
@@ -67,7 +68,7 @@ if __name__ == "__main__":
 	experiment(
 	    sliding_window, {
 	        'key': 'global',
-	        'threshold': RPS_THRESHOLD,
+	        'threshold': LIMIT,
 	        'window_length_ms': WINDOW_LENGTH_MS
 	    }, plot_sliding_window
 	)

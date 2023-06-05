@@ -223,7 +223,7 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	fig = go.Figure()
 
 	df['time'] = df['time_ms'] / 1000  # convert to seconds
-	pprint(df)
+	# pprint(df)
 
 	# # the saturation cycles
 	# # create a boolean mask for the edge of a window, where the status changes from DENIED to OK.
@@ -274,9 +274,29 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	    )
 	)
 
-	# the threshold
+	# the limit & threshold
 	fig.add_hline(
 	    y = data['experiment']['threshold'],
+	    line_width = 1,
+	    line_color = "tomato",
+	    line_dash = "solid",
+	    opacity = 1,
+	)
+
+	fig.add_annotation(
+	    x = 0,
+	    y = data['experiment']['threshold'],
+	    text = "limit",
+	    showarrow = False,
+	    textangle = 270,
+	    xshift = -30,
+	    xref = 'paper',
+	    yref = 'y',
+	    font = dict(color = "tomato",)
+	)
+
+	fig.add_hline(
+	    y = data['experiment']['threshold'] - 1,
 	    line_width = 1,
 	    line_color = "tomato",
 	    line_dash = "dash",
@@ -285,7 +305,7 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 
 	fig.add_annotation(
 	    x = 0,
-	    y = data['experiment']['threshold'],
+	    y = data['experiment']['threshold'] -1,
 	    text = "threshold",
 	    showarrow = False,
 	    textangle = 270,
@@ -295,14 +315,27 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	    font = dict(color = "tomato",)
 	)
 
-	window_starts =  df.loc[df['saturation'] == 0, 'time'].tolist()
-	# assuming your dataframe is called df and the final list is called window_ends
-	window_ends = df.loc[df['saturation'].shift(-1) == 0, 'time'] # get times where next saturation is 0
-	# add the last time
-	last_time = pd.Series(df['time'].iloc[-1])
-	window_ends = pd.concat([window_ends, last_time])
-	window_ends = window_ends + (data['experiment']['window_length_ms'] / 1000)
-	window_ends = window_ends.tolist()
+	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
+	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
+	window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
+	# window_ends = df.loc[df['saturation'].shift(-1) == 1, 'time'] # get times where next saturation is 0
+
+	# for window_start in window_starts:
+	# 	fig.add_vline(
+	# 	    x = window_start,
+	# 	    line_width = 2,
+	# 	    line_color = "darkgreen",
+	# 	    layer = "below",
+	# 	    opacity = 0.5,
+	# 	    line_dash = "solid",
+	# 	)
+
+
+	# # add the last time
+	# last_time = pd.Series(df['time'].iloc[-1])
+	# window_ends = pd.concat([window_ends, last_time])
+	# window_ends = window_ends + ((data['experiment']['window_length_ms'] / 1000) * data['experiment']['threshold'])
+	# window_ends = window_ends.tolist()
 
 
 	for window_start, window_end in zip(window_starts, window_ends):
@@ -339,11 +372,26 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 		start = window_starts[i]
 		end = window_ends[i]
 		window_df = df[(df['time'] >= start) & (df['time'] <= end)]
-		fig.add_trace(go.Scatter(
-			x=window_df['time'],
-			y=window_df['saturation'],
-			name=f"window {i+1}"
-		))
+
+		# filter out rows with saturation of 0
+		df_filtered = window_df.loc[df['status'] == 'OK']
+
+		# create new dataframe with incremented saturation
+		df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+
+		# concatenate original dataframe with new dataframe
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
+		fig.add_trace(
+			go.Scatter(
+				x=df_result['time'],
+				y=df_result['saturation'],
+				name=f"window {i+1}",
+				mode = "lines",
+				line_color = "slateblue",
+				opacity = 0.7
+			)
+		)
 
 
 	

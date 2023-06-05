@@ -30,7 +30,7 @@ def discrete_window(key: str, threshold: float, window_length_ms: float = 1000) 
 
 	else:  # target cache entry does not exist
 		cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
-		return {"status": "OK", "saturation": 0}
+		return {"status": "OK", "saturation": 0} # TODO: this should be 1
 	
 def exclusion_window(key: str, rps_threshold: float):
 	'''Rate limits requests for target using exclusion window. Could also be described as enforced average'''
@@ -57,18 +57,21 @@ def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -
 		time = entry['time']
 
 		# max(x, 0) prevents x from going negative
-		saturation = max(saturation - (globals.CURRENT_TIME - time) * (window_length_ms / 1000) / 1000, 0)
+		time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
+		window_length_s = window_length_ms / 1000  # window length in seconds
 
-		if saturation < threshold:  # increment the saturation
+		saturation = max(saturation - time_s / window_length_s, 0)
+
+		if saturation + 1 < threshold:  # increment the saturation
 
 			# update the cache entry
-			cache.set(key, {'saturation': saturation + 1, 'time': globals.CURRENT_TIME}, window_length_ms)  # set the target cache entry with ttl
-			return {"status": "OK", "saturation": saturation + 1}
+			cache.set(key, {'saturation': saturation + 1, 'time': globals.CURRENT_TIME}, (saturation + 1) * window_length_ms)  # set the target cache entry with ttl
+			return {"status": "OK", "saturation": saturation + 1, "new": False}
 		else:  # we hit saturation threshold
-			return {"status": "DENIED", "saturation": saturation}
+			return {"status": "DENIED", "saturation": saturation, "new": False}
 
 	else:  #  cache entry does not exist
 		cache.set(key, {'saturation': 1, 'time': globals.CURRENT_TIME}, window_length_ms)  # set the target cache entry with ttl
-		return {"status": "OK", "saturation": 0}
+		return {"status": "OK", "saturation": 1, "new": True}
 	
 
