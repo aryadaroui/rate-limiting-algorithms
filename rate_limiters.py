@@ -45,7 +45,7 @@ def exclusion_window(key: str, rps_threshold: float):
 		return {"status": "OK"}
 	
 
-def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -> dict:
+def sliding_window(key: str, threshold: float, window_length_ms: float = 1000, mode='steady_state') -> dict:
 
 	# unpack the cache entry by dict key name. no tuple unpacking funny business
 	entry: dict = cache.get(key)
@@ -57,10 +57,23 @@ def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -
 		time = entry['time']
 
 		# max(x, 0) prevents x from going negative
-		time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
+
+
+		delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
 		window_length_s = window_length_ms / 1000  # window length in seconds
 
-		saturation = max(saturation - time_s / window_length_s, 0)
+		if mode == 'mixed':
+			if saturation > threshold:
+				mode = 'steady_state'
+			else:
+				mode = 'transient'
+			
+		if mode == 'steady_state':
+			saturation = max(saturation - (delta_time_s * threshold) / window_length_s, 0) # steady state limit
+		elif mode == 'transient':
+			saturation = max(saturation - (delta_time_s) / window_length_s, 0) # transient limit
+		else:
+			raise ValueError('Invalid mode')
 
 		if saturation + 1 < threshold:  # increment the saturation
 
@@ -74,4 +87,23 @@ def sliding_window(key: str, threshold: float, window_length_ms: float = 1000) -
 		cache.set(key, {'saturation': 1, 'time': globals.CURRENT_TIME}, window_length_ms)  # set the target cache entry with ttl
 		return {"status": "OK", "saturation": 1, "new": True}
 	
+def simple_sliding_window(key: str, threshold: float, window_length_ms:float = 1000):
 
+	entry: dict = cache.get(key)
+
+	if entry is not None:  # cache entry exists
+		times: list = entry['times']
+
+		# remove all times that are outside the window
+		times = [time for time in times if globals.CURRENT_TIME - time < window_length_ms]
+
+		if len(times) < threshold:
+			times.append(globals.CURRENT_TIME)
+			cache.set(key, {'times': times}, window_length_ms)
+			return {"status": "OK", "saturation": len(times), "new": False}
+		else:
+			return {"status": "DENIED", "saturation": len(times), "new": False}
+
+	else:
+		cache.set(key, {'times': [globals.CURRENT_TIME]}, window_length_ms)
+		return {"status": "OK", "saturation": 1, "new": True}

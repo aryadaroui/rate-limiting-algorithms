@@ -1,16 +1,35 @@
 from rich.pretty import pprint
+##############################################
 import pandas as pd
+import numpy as np
 
-# your series
-s = pd.Series([0.105263, 0.210526, 0.315789, 0.421053, 0.526316, 0.631579, 0.736842, 0.842105, 0.947368, 1.052632, 1.157895, 1.263158, 1.368421, 1.473684, 1.578947, 3.684211, 3.789474, 3.894737, 4.000000], name='time')
+# create a sample DataFrame with unevenly spaced time series
+df = pd.DataFrame({
+    'timestamp': [1, 2, 4, 7, 11],
+    'value': [10, 20, 30, 40, 50],
+    'status': ['OK', 'OK', 'DENIED', 'OK', 'OK']
+})
 
-# calculate the difference between consecutive elements
-diff = s.diff()
+# create a mapping of status values to numerical values
+status_map = {'OK': 1, 'DENIED': 0}
 
-# select the elements where the difference is greater than 1.0
-mask = diff > 1.0
+# create a new DataFrame where the 'status' column is replaced with numerical values
+df_numeric = df.copy()
+df_numeric['status'] = df_numeric['status'].map(status_map)
 
-# get the time of the next element
-result = s[mask].shift(-1)
+window_size = 2
+df_numeric['timestamp'] = pd.to_datetime(df_numeric['timestamp'], unit='s')
+df_numeric = df_numeric.set_index('timestamp')
 
-pprint(result)
+# Resample data to have consistent time intervals (1 second)
+resampled_df = df_numeric.resample('1S').interpolate()
+
+# Calculate the moving average
+moving_average = resampled_df['value'].rolling(window=window_size).mean()
+
+# Count the number of 'OK' values in each rolling window
+ok_count = resampled_df['status'].rolling(window=window_size).apply(lambda x: (x == 1).sum(), raw=True)
+
+# Print the result
+pprint(moving_average)
+pprint(ok_count)

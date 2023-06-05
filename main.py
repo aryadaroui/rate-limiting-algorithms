@@ -18,7 +18,7 @@ def generate_times(rps: float, duration: float) -> list:
 	return times_ms
 
 
-def experiment(rate_limiter: Callable, rate_lmiter_args: dict, plotter: Callable):
+def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
 	data = {
 	    "experiment": {
@@ -30,26 +30,33 @@ def experiment(rate_limiter: Callable, rate_lmiter_args: dict, plotter: Callable
 	}
 
 	# rate limiter specific experiment data
-	data["experiment"].update(rate_lmiter_args)
+	data["experiment"].update(rate_limiter_args)
 
 	for time_ms in TIMES_MS:
 		globals.CURRENT_TIME = time_ms
-		output = rate_limiter(**rate_lmiter_args)
+		output = rate_limiter(**rate_limiter_args)
 		output["time_ms"] = time_ms
 		data["plot"].append(output)
 
 	# pprint(data)
-	plotter(data, 'Py')
+
+	# if rate_limiter_args has entry 'mode'
+	if 'mode' in rate_limiter_args:
+		mode = rate_limiter_args['mode']
+	else:
+		mode = ''
+
+	plotter(data, mode + ' Py')
 	globals.cache.reset()
 
 
 RPS = 10  # requests per second for experiment input
-DURATION = 4  # duration of experiment in seconds
+DURATION = 2 # duration of experiment in seconds
 
 LIMIT = 5  # max requests allowed
-WINDOW_LENGTH_MS = 1000 # size of the time window in milliseconds
+WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-TIMES_MS = generate_times(RPS, DURATION) + [10101]
+TIMES_MS = generate_times(RPS, DURATION) 
 
 if __name__ == "__main__":
 
@@ -63,12 +70,30 @@ if __name__ == "__main__":
 
 	# experiment(exclusion_window, {'key': 'global', 'rps_threshold': RPS_THRESHOLD}, plot_exclusion_window)
 
-
+	experiment(
+	    sliding_window, {
+	        'key': 'global',
+	        'threshold': LIMIT,
+	        'window_length_ms': WINDOW_LENGTH_MS,
+	        'mode': 'transient'
+	    }, plot_sliding_window
+	)
 
 	experiment(
 	    sliding_window, {
 	        'key': 'global',
 	        'threshold': LIMIT,
-	        'window_length_ms': WINDOW_LENGTH_MS
+	        'window_length_ms': WINDOW_LENGTH_MS,
+	        'mode': 'steady_state'
 	    }, plot_sliding_window
 	)
+
+	experiment(
+	    simple_sliding_window, {
+	        'key': 'global',
+	        'threshold': LIMIT,
+	        'window_length_ms': WINDOW_LENGTH_MS,
+	    }, plot_sliding_window
+	)
+
+	

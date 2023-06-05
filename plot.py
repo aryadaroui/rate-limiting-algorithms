@@ -4,6 +4,7 @@ import pandas as pd
 import rich.traceback
 from rich.pretty import pprint
 from plotly import graph_objects as go
+import numpy as np
 
 rich.traceback.install()  # prettier traceback
 
@@ -225,23 +226,6 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	df['time'] = df['time_ms'] / 1000  # convert to seconds
 	# pprint(df)
 
-	# # the saturation cycles
-	# # create a boolean mask for the edge of a window, where the status changes from DENIED to OK.
-	# mask = (df['status'] == 'OK') & (df['status'].shift() == 'DENIED')
-	# df['window_num'] = mask.cumsum() # use cumsum to create a cycle number for each window
-
-	# # iterate over the unique values in window
-	# for window in df['window_num'].unique():
-	# 	fig.add_trace(
-	# 		go.Scatter(
-	# 			x = df[df['window_num'] == window]['time'],
-	# 			y = df[df['window_num'] == window]['saturation'],
-	# 			name = f"saturation, window {window}",
-	# 			mode = "lines",
-	# 			line_color = "slateblue",
-	# 			opacity = 0.7
-	# 		)
-	# 	)
 
 	# the OKs
 	fig.add_trace(
@@ -273,6 +257,8 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	        ),
 	    )
 	)
+
+	
 
 	# the limit & threshold
 	fig.add_hline(
@@ -318,25 +304,6 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
 	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
 	window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
-	# window_ends = df.loc[df['saturation'].shift(-1) == 1, 'time'] # get times where next saturation is 0
-
-	# for window_start in window_starts:
-	# 	fig.add_vline(
-	# 	    x = window_start,
-	# 	    line_width = 2,
-	# 	    line_color = "darkgreen",
-	# 	    layer = "below",
-	# 	    opacity = 0.5,
-	# 	    line_dash = "solid",
-	# 	)
-
-
-	# # add the last time
-	# last_time = pd.Series(df['time'].iloc[-1])
-	# window_ends = pd.concat([window_ends, last_time])
-	# window_ends = window_ends + ((data['experiment']['window_length_ms'] / 1000) * data['experiment']['threshold'])
-	# window_ends = window_ends.tolist()
-
 
 	for window_start, window_end in zip(window_starts, window_ends):
 		fig.add_vrect(
@@ -366,6 +333,8 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 		    line_dash = "solid",
 		)
 
+
+
 	
 	# saturation
 	for i in range(len(window_starts)):
@@ -373,7 +342,6 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 		end = window_ends[i]
 		window_df = df[(df['time'] >= start) & (df['time'] <= end)]
 
-		# filter out rows with saturation of 0
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
 		# create new dataframe with incremented saturation
@@ -386,7 +354,7 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 			go.Scatter(
 				x=df_result['time'],
 				y=df_result['saturation'],
-				name=f"window {i+1}",
+				name=f"lifetime {i+1}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
@@ -394,50 +362,42 @@ def plot_sliding_window(data: dict, title_append='') -> None:
 		)
 
 
-	
+		ez_df = window_df[['time', 'status']]
+		num_oks = []
+
+		for end_time in ez_df['time']:
+			start_time =  max(end_time - data['experiment']['window_length_ms'] / 1000, 0)
+
+			mask = (ez_df['time'] >= start_time) & (ez_df['time'] < end_time)
+
+			# Filter the rows based on the mask
+			filtered_df = ez_df.loc[mask]
+
+			# count the number of OKs
+			num_oks.append(len(filtered_df[filtered_df['status'] == 'OK']))
+
+			# pprint(filtered_df)
 
 
-	# window_ends = df.loc[df['saturation'] == 0, 'time'].shift(-1).tolist()
-
-	# the windows
-	# first_ok_times = df[df['status'] == 'OK'].groupby((df['status'] != df['status'].shift()).cumsum()).first()['time'].tolist()
-
-	# df['time'].diff() > 1.0
-	# for first_ok_time in first_ok_times:
-	# 	fig.add_vrect(
-	# 	    x0 = first_ok_time,
-	# 	    x1 = first_ok_time + data['experiment']['window_length_ms'] / 1000,
-	# 	    fillcolor = "gray",
-	# 	    opacity = 0.05,
-	# 	    layer = "below",
-	# 	    line_width = 0,
-	# 	)
-
-	# 	fig.add_vline(
-	# 		x = first_ok_time, 
-	# 		line_width = 2, 
-	# 		line_color = "darkgreen", 
-	# 		layer = "below", 
-	# 		opacity = 0.5, 
-	# 		line_dash = "solid"
-	# 	)
-
-	# 	fig.add_vline(
-	# 	    x = first_ok_time + data['experiment']['window_length_ms'] / 1000,
-	# 	    line_width = 2,
-	# 	    line_color = "darkred",
-	# 	    layer = "below",
-	# 	    opacity = 0.5,
-	# 	    line_dash = "solid",
-	# 	)
-
-
+		fig.add_trace(
+			go.Scatter(
+				x = ez_df['time'],
+				y = num_oks,
+				name = "num OKs",
+				mode = "lines",
+				line_color = "darkorange",
+				opacity = 0.7
+			)
+		)
 
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    yaxis_title_text = "saturation",
 	    template = "plotly_dark",
+	    
+		xaxis_range = [0, data['experiment']['duration'] + 1],
+		yaxis_range = [-1, 10],
 	)
 
 	fig.show()
