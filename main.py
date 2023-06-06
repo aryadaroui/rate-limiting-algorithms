@@ -50,8 +50,8 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 	globals.cache.reset()
 
 
-RPS = 10  # requests per second for experiment input
-DURATION = 2 # duration of experiment in seconds
+RPS = 5  # requests per second for experiment input
+DURATION = 4 # duration of experiment in seconds
 
 LIMIT = 5  # max requests allowed
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
@@ -63,37 +63,53 @@ if __name__ == "__main__":
 	# experiment(
 	#     discrete_window, {
 	#         'key': 'global',
-	#         'threshold': RPS_THRESHOLD,
+	#         'threshold': LIMIT,
 	#         'window_length_ms': WINDOW_LENGTH_MS
 	#     }, plot_discrete_window
 	# )
 
-	# experiment(exclusion_window, {'key': 'global', 'rps_threshold': RPS_THRESHOLD}, plot_exclusion_window)
+	# experiment(exclusion_window, {'key': 'global', 'rps_threshold': LIMIT}, plot_exclusion_window)
+
+	# experiment(
+	#     sliding_window, {
+	#         'key': 'global',
+	#         'threshold': LIMIT,
+	#         'window_length_ms': WINDOW_LENGTH_MS,
+	#         'mode': 'transient'
+	#     }, plot_sliding_window
+	# )
+
+	# experiment(
+	#     sliding_window, {
+	#         'key': 'global',
+	#         'threshold': LIMIT,
+	#         'window_length_ms': WINDOW_LENGTH_MS,
+	#         'mode': 'steady_state'
+	#     }, plot_sliding_window
+	# )
+
+	# experiment(
+	#     simple_sliding_window, {
+	#         'key': 'global',
+	#         'threshold': LIMIT,
+	#         'window_length_ms': WINDOW_LENGTH_MS,
+	#     }, plot_sliding_window
+	# )
 
 	experiment(
-	    sliding_window, {
+	    extrapolated_sliding_window, {
 	        'key': 'global',
 	        'threshold': LIMIT,
 	        'window_length_ms': WINDOW_LENGTH_MS,
-	        'mode': 'transient'
+			'mode'	: 'transient'
 	    }, plot_sliding_window
 	)
 
-	experiment(
-	    sliding_window, {
-	        'key': 'global',
-	        'threshold': LIMIT,
-	        'window_length_ms': WINDOW_LENGTH_MS,
-	        'mode': 'steady_state'
-	    }, plot_sliding_window
-	)
-
-	experiment(
-	    simple_sliding_window, {
-	        'key': 'global',
-	        'threshold': LIMIT,
-	        'window_length_ms': WINDOW_LENGTH_MS,
-	    }, plot_sliding_window
-	)
-
-	
+	# experiment(
+	# 	leaky_bucket, {
+	# 		'key': 'global',
+	# 		'threshold': LIMIT,
+	# 		'window_length_ms': WINDOW_LENGTH_MS,
+	# 		'mode': 'fast'
+	# 	}, plot_sliding_window
+	# )

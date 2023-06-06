@@ -11,6 +11,7 @@ rich.traceback.install()  # prettier traceback
 def plot_discrete_window(data: dict, title_append='') -> None:
 	"""Plot the discrete window data"""
 
+
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
 
@@ -220,6 +221,7 @@ def plot_exclusion_window(data: dict, title_append='') -> None:
 	fig.show()
 
 def plot_sliding_window(data: dict, title_append='') -> None:
+	"""Plot the sliding window data."""
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
 

@@ -13,7 +13,6 @@ const num_requests = DURATION * REQS_PER_SEC;
 const req_interval_ms = 1000 / REQS_PER_SEC;
 const cache = new RemoteCache();
 
-
 function experiment(rate_limiter: Function, reqs_per_sec: number, threshold: number, duration: number, window_length?: number) {
 	console.log('\x1b[1m\x1b[36mStarting experiment:\x1b[0m', rate_limiter.name);
 
