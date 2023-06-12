@@ -329,7 +329,8 @@ def plot_extrapolating_window(data: dict, title_append=''):
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
 	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
-	window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
+	# window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
+	window_ends = window_ends['time'] + window_ends['saturation']
 
 	for window_start, window_end in zip(window_starts, window_ends):
 		fig.add_vrect(
@@ -638,6 +639,7 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	    template = "plotly_dark",
 	    xaxis_range = [0, DURATION + 1],
 	    yaxis_range = [-1, LIMIT * 2],
+	    legend=dict(groupclick="toggleitem")
 	)
 
 	subplot.update_xaxes(title_text="time [s]", row=len(figs), col=1)

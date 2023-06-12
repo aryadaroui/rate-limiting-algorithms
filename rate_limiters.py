@@ -1,13 +1,13 @@
 '''Rate limiting algorithms. For more information, see https://aryadee.dev
 '''
 #--------------------------------------------------------------------------------------
-# Written by Arya "Dee" Daroui, Jun 2023   
+# Written by Arya "Dee" Daroui, Jun 2023
 # MIT License
 # You may remove this comment block, but you may want to leave link to blog post above.
 #--------------------------------------------------------------------------------------
 
 import math
-import globals # TODO: rename this to experiment_globals
+import globals  # TODO: rename this to experiment_globals
 
 cache = globals.cache
 
@@ -82,13 +82,13 @@ def extrapolating_window(key: str, threshold: float, window_length_ms: float = 1
 			    key, {
 			        'saturation': saturation + 1,
 			        'time': globals.CURRENT_TIME
-			    }, (saturation + 1) * window_length_ms
+			    }, (saturation + 1) * 1000
 			)  # set the target cache entry with ttl
 			return {"status": "OK", "saturation": saturation + 1, "new": False}
 		else:  # we hit saturation threshold
 			return {"status": "DENIED", "saturation": saturation, "new": False}
 
-	else: # cache entry does not exist
+	else:  # cache entry does not exist
 		cache.set(
 		    key, {
 		        'saturation': 1,
