@@ -8,6 +8,9 @@ from typing import Callable
 from rate_limiters import *
 import globals
 
+import plotly.graph_objs as go
+from plotly.subplots import make_subplots
+
 
 def generate_times(rps: float, duration: float) -> list:
 	''' Generates a list of times in milliseconds.'''
@@ -46,70 +49,83 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 	else:
 		mode = ''
 
-	plotter(data, mode + ' Py')
+	fig = plotter(data, mode + ' Py')
 	globals.cache.reset()
+	return fig
 
 
-RPS = 5  # requests per second for experiment input
-DURATION = 4 # duration of experiment in seconds
+RPS = 10  # requests per second for experiment input
+DURATION = 4  # duration of experiment in seconds
 
 LIMIT = 5  # max requests allowed
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-TIMES_MS = generate_times(RPS, DURATION) 
+TIMES_MS = generate_times(RPS, DURATION)
 
 if __name__ == "__main__":
 
-	# experiment(
-	#     discrete_window, {
-	#         'key': 'global',
-	#         'threshold': LIMIT,
-	#         'window_length_ms': WINDOW_LENGTH_MS
-	#     }, plot_discrete_window
-	# )
+	figs = []
 
-	# experiment(exclusion_window, {'key': 'global', 'rps_threshold': LIMIT}, plot_exclusion_window)
-
-	# experiment(
-	#     sliding_window, {
-	#         'key': 'global',
-	#         'threshold': LIMIT,
-	#         'window_length_ms': WINDOW_LENGTH_MS,
-	#         'mode': 'transient'
-	#     }, plot_sliding_window
-	# )
-
-	# experiment(
-	#     sliding_window, {
-	#         'key': 'global',
-	#         'threshold': LIMIT,
-	#         'window_length_ms': WINDOW_LENGTH_MS,
-	#         'mode': 'steady_state'
-	#     }, plot_sliding_window
-	# )
-
-	# experiment(
-	#     simple_sliding_window, {
-	#         'key': 'global',
-	#         'threshold': LIMIT,
-	#         'window_length_ms': WINDOW_LENGTH_MS,
-	#     }, plot_sliding_window
-	# )
-
-	experiment(
-	    extrapolated_sliding_window, {
-	        'key': 'global',
-	        'threshold': LIMIT,
-	        'window_length_ms': WINDOW_LENGTH_MS,
-			'mode'	: 'transient'
-	    }, plot_sliding_window
+	figs.append(
+		experiment(
+			discrete_window, {
+				'key': 'global',
+				'threshold': LIMIT,
+				'window_length_ms': WINDOW_LENGTH_MS
+			}, plot_discrete_window
+		)
 	)
 
-	# experiment(
-	# 	leaky_bucket, {
-	# 		'key': 'global',
-	# 		'threshold': LIMIT,
-	# 		'window_length_ms': WINDOW_LENGTH_MS,
-	# 		'mode': 'fast'
-	# 	}, plot_sliding_window
-	# )
+	figs.append(
+		experiment(
+			exclusion_window,
+			{
+				'key': 'global',
+    			'rps_threshold': LIMIT
+			},
+			plot_exclusion_window
+		)
+	)
+
+	figs.append(
+	    experiment(
+	        extrapolated_sliding_window, {
+	            'key': 'global',
+	            'threshold': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	            'mode': 'soft'
+	        }, plot_sliding_window
+	    )
+	)
+
+	figs.append(
+	    experiment(
+	        extrapolated_sliding_window, {
+	            'key': 'global',
+	            'threshold': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	            'mode': 'hard'
+	        }, plot_sliding_window
+	    )
+	)
+
+	figs.append(
+	    experiment(
+	        simple_sliding_window, {
+	            'key': 'global',
+	            'threshold': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	        }, plot_simple_sliding_window
+	    )
+	)
+
+	figs_to_subplot(figs,
+		vertical_spacing = 0.05,
+		subplot_titles = [
+			'Discrete window',
+			'Exclusion window',
+			'Extrapolated sliding window, soft',
+			'Extrapolated sliding window, hard',
+	        'Simple sliding window'
+		]
+	).show()

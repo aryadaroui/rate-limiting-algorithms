@@ -55,7 +55,7 @@ def exclusion_window(key: str, rps_threshold: float):
 		return {"status": "OK"}
 
 
-def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: float = 1000, mode = 'steady_state') -> dict:
+def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
 
 	# unpack the cache entry by dict key name. no tuple unpacking funny business
 	entry: dict = cache.get(key)
@@ -65,20 +65,12 @@ def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: fl
 		saturation = entry['saturation']
 		time = entry['time']
 
-		# max(x, 0) prevents x from going negative
-
 		delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
 		window_length_s = window_length_ms / 1000  # window length in seconds
 
-		# if mode == 'mixed':
-		# 	if saturation > threshold:
-		# 		mode = 'steady_state'
-		# 	else:
-		# 		mode = 'transient'
-
-		if mode == 'steady_state':
+		if mode == 'soft':
 			saturation = max(saturation - (delta_time_s * threshold) / window_length_s, 0)  # steady state limit
-		elif mode == 'transient':
+		elif mode == 'hard':
 			saturation = max(saturation - (delta_time_s) / window_length_s, 0)  # transient limit
 		else:
 			raise ValueError('Invalid mode')
