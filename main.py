@@ -8,10 +8,6 @@ from typing import Callable
 from rate_limiters import *
 import globals
 
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-
-
 def generate_times(rps: float, duration: float) -> list:
 	''' Generates a list of times in milliseconds.'''
 	times_ms = []
@@ -19,7 +15,6 @@ def generate_times(rps: float, duration: float) -> list:
 	for i in range(int(rps * duration)):
 		times_ms.append((i + 1) * interval)  # i + 1 to make it not start at 0
 	return times_ms
-
 
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
@@ -89,43 +84,44 @@ if __name__ == "__main__":
 
 	figs.append(
 	    experiment(
-	        extrapolated_sliding_window, {
+	        extrapolating_window, {
 	            'key': 'global',
 	            'threshold': LIMIT,
 	            'window_length_ms': WINDOW_LENGTH_MS,
 	            'mode': 'soft'
-	        }, plot_sliding_window
+	        }, plot_extrapolating_window
 	    )
 	)
 
 	figs.append(
 	    experiment(
-	        extrapolated_sliding_window, {
+	        extrapolating_window, {
 	            'key': 'global',
 	            'threshold': LIMIT,
 	            'window_length_ms': WINDOW_LENGTH_MS,
 	            'mode': 'hard'
-	        }, plot_sliding_window
+	        }, plot_extrapolating_window
 	    )
 	)
 
 	figs.append(
 	    experiment(
-	        simple_sliding_window, {
+	        sliding_window, {
 	            'key': 'global',
 	            'threshold': LIMIT,
 	            'window_length_ms': WINDOW_LENGTH_MS,
-	        }, plot_simple_sliding_window
+	        }, plot_sliding_window
 	    )
 	)
 
-	figs_to_subplot(figs,
-		vertical_spacing = 0.05,
+	figs_to_subplot(
+		figs,
 		subplot_titles = [
 			'Discrete window',
 			'Exclusion window',
-			'Extrapolated sliding window, soft',
-			'Extrapolated sliding window, hard',
-	        'Simple sliding window'
-		]
+			'Extrapolating window, soft',
+			'Extrapolating window, hard',
+	        'Sliding window'
+		],
+		vertical_spacing = 0.05
 	).show()

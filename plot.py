@@ -74,13 +74,33 @@ def plot_discrete_window(data: dict, title_append=''):
 	    y = data['experiment']['threshold'],
 	    line_width = 1,
 	    line_color = "tomato",
-	    line_dash = "dash",
+	    line_dash = "solid",
 	    opacity = 1,
 	)
 
 	fig.add_annotation(
 	    x = 0,
 	    y = data['experiment']['threshold'],
+	    text = "limit",
+	    showarrow = False,
+	    textangle = 270,
+	    xshift = -30,
+	    xref = 'paper',
+	    yref = 'y',
+	    font = dict(color = "tomato",)
+	)
+
+	fig.add_hline(
+	    y = data['experiment']['threshold'] - 1,
+	    line_width = 1,
+	    line_color = "tomato",
+	    line_dash = "dash",
+	    opacity = 1,
+	)
+
+	fig.add_annotation(
+	    x = 0,
+	    y = data['experiment']['threshold'] - 1,
 	    text = "threshold",
 	    showarrow = False,
 	    textangle = 270,
@@ -224,7 +244,7 @@ def plot_exclusion_window(data: dict, title_append=''):
 	# fig.show()
 	return fig
 
-def plot_sliding_window(data: dict, title_append=''):
+def plot_extrapolating_window(data: dict, title_append=''):
 	"""Plot the sliding window data."""
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
@@ -409,7 +429,7 @@ def plot_sliding_window(data: dict, title_append=''):
 	# fig.show()
 	return fig
 
-def plot_simple_sliding_window(data: dict, title_append: str = ""):
+def plot_sliding_window(data: dict, title_append: str = ""):
 	"""Plot the sliding window data."""
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
@@ -595,13 +615,24 @@ def plot_simple_sliding_window(data: dict, title_append: str = ""):
 	return fig
 
 def figs_to_subplot(figs: list[go.Figure], **kwargs):
-
 	subplot = make_subplots(
 		rows=len(figs),
 		cols=1,
 		shared_xaxes=True,
 		**kwargs
 	)
+
+	for i, fig in enumerate(figs):
+
+		for trace in fig.data:
+			if 'subplot_titles' in kwargs:
+				trace.legendgroup = kwargs['subplot_titles'][i]
+				trace.legendgrouptitle.text = kwargs['subplot_titles'][i]
+			subplot.add_trace(trace, row=i+1, col=1)
+		for shape in fig.layout.shapes:
+			subplot.add_shape(shape, row=i+1, col=1)
+		for annotation in fig.layout.annotations:
+			subplot.add_annotation(annotation, row=i+1, col=1)
 
 	subplot.update_layout(
 	    template = "plotly_dark",
@@ -611,21 +642,9 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 
 	subplot.update_xaxes(title_text="time [s]", row=len(figs), col=1)
 
-	for i, fig in enumerate(figs):
-		subplot = add_fig_to_subplot(subplot, fig, i+1, 1)
-
 	return subplot
 
-def add_fig_to_subplot(subplot: go.Figure, fig: go.Figure, row: int, col: int):
-	
-	for trace in fig.data:
-		subplot.add_trace(trace, row=row, col=col)
-	for shape in fig.layout.shapes:
-		subplot.add_shape(shape, row=row, col=col)
-	for annotation in fig.layout.annotations:
-		subplot.add_annotation(annotation, row=row, col=col)
 
-	return subplot
 
 def debugger_is_active() -> bool:
 	"""Return if the debugger is currently active"""

@@ -55,9 +55,9 @@ def exclusion_window(key: str, rps_threshold: float):
 		return {"status": "OK"}
 
 
-def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
+def extrapolating_window(key: str, threshold: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
 
-	# unpack the cache entry by dict key name. no tuple unpacking funny business
+	# unpack the cache entry by dict key name
 	entry: dict = cache.get(key)
 
 	if entry is not None:  # cache entry exists
@@ -88,7 +88,7 @@ def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: fl
 		else:  # we hit saturation threshold
 			return {"status": "DENIED", "saturation": saturation, "new": False}
 
-	else:  #  cache entry does not exist
+	else: # cache entry does not exist
 		cache.set(
 		    key, {
 		        'saturation': 1,
@@ -98,7 +98,7 @@ def extrapolated_sliding_window(key: str, threshold: float, window_length_ms: fl
 		return {"status": "OK", "saturation": 1, "new": True}
 
 
-def simple_sliding_window(key: str, threshold: float, window_length_ms: float = 1000):
+def sliding_window(key: str, threshold: float, window_length_ms: float = 1000):
 
 	entry: dict = cache.get(key)
 
