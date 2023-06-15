@@ -54,14 +54,14 @@ The TypeScript experiments are run in real-time with worker threads, and spawn a
 | ----------------------------------- | :--------: | :----: | :---------------------------------: |
 | `discrete_window(...)` |     burst inducing     |   ✅   | ✅ |
 | `exclusion_window(...)` |     burst intolerant. degenerated discrete window     |   ⚠️   | ✅ |
-| `simple_sliding_window(...)` |     burst inducing. high storage/proc cost     |   ⚠️   | ✅ |
-| `extrapolated_sliding_window(mode='soft')` |     ⭐️ <u>burst tolerant</u>; steady-state limiting ⭐️     |   ⚠️   | ✅ |
-| `extrapolated_sliding_window(mode='hard')` |     burst intolerant; transient limiting      |     ⚠️      |   ✅    |
+| `sliding_window(...)` |     burst inducing. high storage/proc cost     |   ⚠️   | ✅ |
+| `extrapolateding_window(mode='soft')` |     ⭐️ <u>burst tolerant</u>; steady-state limiting ⭐️     |   ⚠️   | ✅ |
+| `extrapolating_window(mode='hard')` |     burst intolerant; transient limiting      |     ⚠️      |   ✅    |
 | Leaky bucket                               |           not really a rate limiter           |     ❌      |   ❌    |
 
-Leaky bucket is omitted because it's a traffic shaper; it modifies transmission rate rather than limiting (denying) traffic. However, you can get similar behavior out of the `extrapolated_sliding_window`.
+Leaky bucket is omitted because it's a traffic shaper; it modifies transmission rate rather than limiting (denying) traffic. However, you can get similar behavior out of the `extrapolating_window`.
 
- `extrapolated_sliding_window(mode='soft')` is the most flexible. Under continuous load, it will rate limit at steady state, and will allow transients of a maximum size of 2x the rate limit.
+ `extrapolating_window(mode='soft')` is the most flexible. Under continuous load, it will rate limit at steady state, and will allow transients of a maximum size of 2x the rate limit.
 
 ## Can I install this with NPM or PyPI? (No.)
 

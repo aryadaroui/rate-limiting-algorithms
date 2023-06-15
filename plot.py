@@ -25,6 +25,13 @@ def plot_discrete_window(data: dict, title_append=''):
 	mask = (df['status'] == 'OK') & (df['status'].shift() == 'DENIED')
 	df['window_num'] = mask.cumsum() # use cumsum to create a cycle number for each window
 
+
+	# 	# create new dataframe with incremented saturation
+	# df_duplicated = df_filtered.assign(saturation=df_filtered['saturatio5an'] - 1)
+
+	# # concatenate original dataframe with new dataframe
+	# df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
 	# iterate over the unique values in window
 	for window in df['window_num'].unique():
 		fig.add_trace(
@@ -329,8 +336,11 @@ def plot_extrapolating_window(data: dict, title_append=''):
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
 	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
-	# window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
-	window_ends = window_ends['time'] + window_ends['saturation']
+
+	if data['experiment']['mode'] == 'soft':
+		window_ends = window_ends['time'] + (window_ends['saturation'] / data['experiment']['threshold']) * data['experiment']['window_length_ms'] / 1000
+	else:
+		window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
 
 	for window_start, window_end in zip(window_starts, window_ends):
 		fig.add_vrect(
@@ -360,9 +370,6 @@ def plot_extrapolating_window(data: dict, title_append=''):
 		    line_dash = "solid",
 		)
 
-
-
-	
 	# saturation
 	for i in range(len(window_starts)):
 		start = window_starts[i]
@@ -388,7 +395,6 @@ def plot_extrapolating_window(data: dict, title_append=''):
 			)
 		)
 
-
 		ez_df = window_df[['time', 'status']]
 		num_oks = []
 
@@ -411,7 +417,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 				x = ez_df['time'],
 				y = num_oks,
 				name = "num OKs",
-				mode = "lines",
+				mode = "lines+markers",
 				line_color = "darkorange",
 				opacity = 0.7
 			)
@@ -597,7 +603,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 				x = ez_df['time'],
 				y = num_oks,
 				name = "num OKs",
-				mode = "lines",
+				mode = "lines+markers",
 				line_color = "darkorange",
 				opacity = 0.7
 			)
@@ -638,7 +644,7 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	subplot.update_layout(
 	    template = "plotly_dark",
 	    xaxis_range = [0, DURATION + 1],
-	    yaxis_range = [-1, LIMIT * 2],
+	    # yaxis_range = [-1, LIMIT * 2],
 	    legend=dict(groupclick="toggleitem")
 	)
 

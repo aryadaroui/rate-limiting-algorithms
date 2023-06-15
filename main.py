@@ -50,12 +50,12 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 
 
 RPS = 10  # requests per second for experiment input
-DURATION = 3.2  # duration of experiment in seconds
+DURATION = 2.0  # duration of experiment in seconds
 
 LIMIT = 5  # max requests allowed
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-TIMES_MS = generate_times(RPS, DURATION)
+TIMES_MS = generate_times(RPS, DURATION) + [6000]
 
 if __name__ == "__main__":
 
