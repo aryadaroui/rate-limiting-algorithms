@@ -79,8 +79,6 @@ MIT License. Attribution appreciated but not required.
 
 You *probably* should link to my blog post in your docstring, though.
 
-​	`	
-
 # Notes for myself
 
 - For package-ability

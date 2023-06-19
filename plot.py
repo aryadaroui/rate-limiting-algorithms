@@ -10,6 +10,8 @@ from main import DURATION, LIMIT
 
 rich.traceback.install()  # prettier traceback
 
+# TODO: make general function to get numOKs
+
 def plot_discrete_window(data: dict, title_append=''):
 	"""Plot the discrete window data"""
 
@@ -32,18 +34,42 @@ def plot_discrete_window(data: dict, title_append=''):
 	# # concatenate original dataframe with new dataframe
 	# df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
 
+
+
 	# iterate over the unique values in window
 	for window in df['window_num'].unique():
+
+		window_df = df[df['window_num'] == window]
+
+		df_duplicated = window_df.assign(saturation=window_df['saturation'] - 1)
+
+		# concatenate original dataframe with new dataframe
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
+		df_result['saturation'] = df_result['saturation'] + 1
+		
+
 		fig.add_trace(
 			go.Scatter(
-				x = df[df['window_num'] == window]['time'],
-				y = df[df['window_num'] == window]['saturation'],
-				name = f"saturation, window {window}",
+				x = df_result['time'],
+				y = df_result['saturation'],
+				name = f"saturation, lifetime {window}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
 			)
 		)
+
+		# fig.add_trace(
+		# 	go.Scatter(
+		# 		x = df[df['window_num'] == window]['time'],
+		# 		y = df[df['window_num'] == window]['saturation'],
+		# 		name = f"saturation, lifetime {window}",
+		# 		mode = "lines",
+		# 		line_color = "slateblue",
+		# 		opacity = 0.7
+		# 	)
+		# )
 
 	# the OKs
 	fig.add_trace(
@@ -519,6 +545,12 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    font = dict(color = "tomato",)
 	)
 
+
+	# get the lifetimes
+
+
+
+
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
 	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
 	window_ends = window_ends['time'] + data['experiment']['window_length_ms'] / 1000
@@ -619,7 +651,8 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		yaxis_range = [-1, 10],
 	)
 
-	return fig
+	return fig	
+
 
 def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	subplot = make_subplots(
