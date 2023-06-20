@@ -8,17 +8,15 @@ Examples of simple rate limiting algorithms in TypeScript and Python.
 
 This was created to accompany a blog post on rate limiting algorithms, but they've been written in a non-specific way, so you can easily use them for yourself. For more details about their characteristics see [~post not done~].
 
-These algorithms reside in functions in `rate_limiters.ts` and `rate_limiters.py`.
+---
+
+##### These algorithms reside in functions in `rate_limiters.ts` and `rate_limiters.py`.
 
 **NOTE**: I use a local dummy `RemoteCache` class to emulate a remote cache because that's a common implementation for rate limiting [~talk about how RemoteCache mimics Redis behavior~]. _You must replace this with your own data storage service / method_. Similarly, the Python implementation uses a global `CURRENT_TIME` variable instead of the `datetime` package, so you'll have to change that too.
 
-
----
-
-
 ### Example
 
-Suppose you  you have some function `request_handler()` that handles incoming network traffic. You can rate limit a specific target (e.g. the requester's I.P.) by simply calling the rate limiting function and checking its "status". The rate limiter function queries your remote cache, using your target as a key.
+Suppose you  you have some function `request_handler()` that handles incoming network traffic. You can rate limit a specific target (e.g. the requester's IP address) by simply calling the rate limiting function and checking its "status". The rate limiter function queries your remote cache, using your target as a key.
 
 ```python
 def request_handler(request_ip: str):

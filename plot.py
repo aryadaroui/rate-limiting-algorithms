@@ -106,7 +106,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	fig.add_hline(
 	    y = data['experiment']['threshold'],
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "solid",
 	    opacity = 1,
 	)
@@ -120,13 +120,13 @@ def plot_discrete_window(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 	fig.add_hline(
 	    y = data['experiment']['threshold'] - 1,
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "dash",
 	    opacity = 1,
 	)
@@ -140,7 +140,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 	# the windows
@@ -323,7 +323,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 	fig.add_hline(
 	    y = data['experiment']['threshold'],
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "solid",
 	    opacity = 1,
 	)
@@ -337,13 +337,13 @@ def plot_extrapolating_window(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 	fig.add_hline(
 	    y = data['experiment']['threshold'] - 1,
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "dash",
 	    opacity = 1,
 	)
@@ -357,7 +357,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
@@ -444,7 +444,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 				y = num_oks,
 				name = "num OKs",
 				mode = "lines+markers",
-				line_color = "darkorange",
+				line_color = "violet",
 				opacity = 0.7
 			)
 		)
@@ -508,7 +508,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	fig.add_hline(
 	    y = data['experiment']['threshold'],
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "solid",
 	    opacity = 1,
 	)
@@ -522,13 +522,13 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 	fig.add_hline(
 	    y = data['experiment']['threshold'] - 1,
 	    line_width = 1,
-	    line_color = "tomato",
+	    line_color = "indianred",
 	    line_dash = "dash",
 	    opacity = 1,
 	)
@@ -542,7 +542,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "tomato",)
+	    font = dict(color = "indianred",)
 	)
 
 
@@ -636,7 +636,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 				y = num_oks,
 				name = "num OKs",
 				mode = "lines+markers",
-				line_color = "darkorange",
+				line_color = "violet",
 				opacity = 0.7
 			)
 		)
@@ -651,7 +651,86 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		yaxis_range = [-1, 10],
 	)
 
+	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
+
 	return fig	
+
+def get_num_oks(df, window_len_ms: float, fig):
+	''' handles everything input in ms, but plots in s.
+	'''
+
+	df = df[['time_ms', 'status']]
+
+	# create new df with new rows for when the window ends
+	new_rows = df[df['status'] == 'OK'].copy()
+	new_rows['time_ms'] = new_rows['time_ms'] + window_len_ms
+	new_rows['status'] = ''
+
+	df = pd.concat([df, new_rows], ignore_index=True).drop_duplicates(subset=['time_ms']).sort_values(['time_ms', 'status'], ascending=[True, True])
+
+
+	num_oks = []
+	for end_time in df['time_ms']:
+		start_time =  max(end_time - window_len_ms, 0)
+		mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time)
+		# mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time) | (df['time_ms'] == end_time) # all the times within the window
+
+		# get the number of OKs within the window
+		num_oks.append(df[mask][df['status'] == 'OK'].shape[0])
+
+	df['num_oks'] = num_oks
+
+
+	# df_duplicated = df.assign(num_oks=df[df['status'] == 'OK']['num_oks'] - 1)
+
+	# # concatenate original dataframe with new dataframe
+	# df_result = pd.concat([df, df_duplicated], ignore_index=True).sort_values(['time_ms', 'num_oks'], ascending=[True, True])
+
+	# df_result['num_oks'] = df_result['num_oks'] + 1
+
+	return fig.add_trace(
+		go.Scatter(
+			x = df['time_ms'] / 1000,
+			y = df['num_oks'],
+			name = "num OKs",
+			mode = "lines",
+			line_color = "yellow",
+			opacity = 0.7
+		)
+	)
+
+
+
+
+	# pprint(filtered_df)
+
+
+	# ok_times = df['time_ms'][df['status'] == 'OK']
+	# ok_time_ends = ok_times + window_len
+
+	# ez_df = pd.Series(ok_times).to_frame(name='time_ms')
+	# ez_df['status'] = df['status']
+
+
+	# df[df['status'] == 'OK'].apply(lambda row: {'time_ms': row['time_ms'] + 1000.0, 'status': ''}, axis=1)
+
+	# num_ok_times = pd.concat([ok_times, ok_time_ends]).drop_duplicates().sort_values().reset_index(drop=True)
+	# num_oks = [sum((s - window_len) <= num_ok_times[:i]) for i, s in enumerate(num_ok_times)]
+
+	# fig.add_trace(
+	# 	go.Scatter(
+			
+	# 		x = num_ok_times / 1000,
+	# 		y = num_oks,
+	# 		name = "num OKs",
+	# 		mode = "lines+markers",
+	# 		line_color = "yellow",
+	# 		opacity = 0.7
+	# 	)
+
+	# )
+
+	return fig
 
 
 def figs_to_subplot(figs: list[go.Figure], **kwargs):

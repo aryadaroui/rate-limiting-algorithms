@@ -11,7 +11,6 @@ import globals  # TODO: rename this to experiment_globals
 
 cache = globals.cache
 
-
 def discrete_window(key: str, threshold: float, window_length_ms: float = 1000) -> dict:
 	'''Rate limits requests for target using discrete window.
     
@@ -154,47 +153,6 @@ def extrapolating_window(key: str, threshold: float, window_length_ms: float = 1
 		return extrapolating_window_hard(key, threshold, window_length_ms)
 	else:
 		raise ValueError('Invalid mode')
-
-
-
-
-
-	# if entry is not None:  # cache entry exists
-
-	# 	saturation = entry['saturation']
-	# 	time = entry['time']
-
-	# 	delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
-	# 	window_length_s = window_length_ms / 1000  # window length in seconds
-
-	# 	if mode == 'soft':
-	# 		saturation = max(saturation - (delta_time_s * threshold) / window_length_s, 0)  # steady state limit
-	# 	elif mode == 'hard':
-	# 		saturation = max(saturation - (delta_time_s) / window_length_s, 0)  # transient limit
-	# 	else:
-	# 		raise ValueError('Invalid mode')
-
-	# 	if saturation + 1 < threshold:  # increment the saturation
-	# 		cache.set(
-	# 		    key, {
-	# 		        'saturation': saturation + 1,
-	# 		        'time': globals.CURRENT_TIME
-	# 		    }, (saturation + 1) * 1000
-	# 		)
-			
-	# 		  # set the target cache entry with ttl
-	# 		return {"status": "OK", "saturation": saturation + 1, "new": False}
-	# 	else:  # we hit saturation threshold
-	# 		return {"status": "DENIED", "saturation": saturation, "new": False}
-
-	# else:  # cache entry does not exist
-	# 	cache.set(
-	# 	    key, {
-	# 	        'saturation': 1,
-	# 	        'time': globals.CURRENT_TIME
-	# 	    }, window_length_ms
-	# 	)  # set the target cache entry with ttl
-	# 	return {"status": "OK", "saturation": 1, "new": True}
 
 
 # # may have just made sliding window again lol. may not use this anyway
