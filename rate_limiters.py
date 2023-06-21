@@ -29,16 +29,17 @@ def discrete_window(key: str, threshold: float, window_length_ms: float = 1000) 
 	saturation = cache.get(key)
 
 	if saturation is not None:  # target cache entry exists
-		cache.incr(key)  # incr() does not reset ttl (just like in Redis)
+		# cache.incr(key)  # incr() does not reset ttl (just like in Redis)
 
-		if saturation < threshold:  # increment the saturation
-			return {"status": "OK", "saturation": saturation}
+		if saturation < threshold:
+			cache.incr(key)  # incr() does not reset ttl (just like in Redis)
+			return {"status": "OK", "saturation": saturation + 1}
 		else:  # we hit saturation threshold
 			return {"status": "DENIED", "saturation": saturation}
 
 	else:  # target cache entry does not exist
 		cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
-		return {"status": "OK", "saturation": 0}  # TODO: this should be 1
+		return {"status": "OK", "saturation": 1}  # should this be 1?
 
 def exclusion_window(key: str, rps_threshold: float):
 	'''Rate limits requests for target using exclusion window. Could also be described as enforced average'''

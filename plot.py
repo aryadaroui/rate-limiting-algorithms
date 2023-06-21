@@ -46,14 +46,14 @@ def plot_discrete_window(data: dict, title_append=''):
 		# concatenate original dataframe with new dataframe
 		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
 
-		df_result['saturation'] = df_result['saturation'] + 1
+		# df_result['saturation'] = df_result['saturation']
 		
 
 		fig.add_trace(
 			go.Scatter(
 				x = df_result['time'],
 				y = df_result['saturation'],
-				name = f"saturation, lifetime {window}",
+				name = f"saturation {window + 1}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
@@ -174,11 +174,12 @@ def plot_discrete_window(data: dict, title_append=''):
 		)
 
 
+	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
 
 	fig.update_layout(
 	    title_text = "discrete_window() " + title_append,
 	    xaxis_title_text = "time [s]",
-	    yaxis_title_text = "saturation",
+	    # yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	)
 
@@ -259,12 +260,24 @@ def plot_exclusion_window(data: dict, title_append=''):
 		)
 
 
+	fig.add_annotation(
+	    x = 0,
+	    y = data['experiment']['rps_threshold'],
+	    text = "limit",
+	    showarrow = False,
+	    textangle = 270,
+	    xshift = -30,
+	    xref = 'paper',
+	    yref = 'y',
+	    font = dict(color = "indianred",)
+	)
 
-	fig.update_layout(
-	    title_text = "discrete_window " + title_append,
-	    xaxis_title_text = "time [s]",
-	    yaxis_title_text = "saturation",
-	    template = "plotly_dark",
+	fig.add_hline(
+	    y = data['experiment']['rps_threshold'],
+	    line_width = 1,
+	    line_color = "indianred",
+	    line_dash = "solid",
+	    opacity = 1,
 	)
 
 	fig.update_layout(
@@ -273,6 +286,8 @@ def plot_exclusion_window(data: dict, title_append=''):
 	    # yaxis_title_text = "",
 	    template = "plotly_dark",
 	)
+
+	fig = get_num_oks(df, 1000, fig )
 
 	# fig.show()
 	return fig
@@ -414,7 +429,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 			go.Scatter(
 				x=df_result['time'],
 				y=df_result['saturation'],
-				name=f"lifetime {i+1}",
+				name=f"saturation {i+1}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
@@ -438,26 +453,28 @@ def plot_extrapolating_window(data: dict, title_append=''):
 			# pprint(filtered_df)
 
 
-		fig.add_trace(
-			go.Scatter(
-				x = ez_df['time'],
-				y = num_oks,
-				name = "num OKs",
-				mode = "lines+markers",
-				line_color = "violet",
-				opacity = 0.7
-			)
-		)
+		# fig.add_trace(
+		# 	go.Scatter(
+		# 		x = ez_df['time'],
+		# 		y = num_oks,
+		# 		name = "num OKs",
+		# 		mode = "lines+markers",
+		# 		line_color = "violet",
+		# 		opacity = 0.7
+		# 	)
+		# )
 
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
-	    yaxis_title_text = "saturation",
+	    # yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	    
 		xaxis_range = [0, data['experiment']['duration'] + 1],
 		yaxis_range = [-1, 10],
 	)
+
+	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
 
 	# fig.show()
 	return fig
@@ -591,7 +608,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	for i in range(len(window_starts)):
 		start = window_starts[i]
 		end = window_ends[i]
-		window_df = df[(df['time'] >= start) & (df['time'] <= end)]
+		window_df = df[(df['time'] > start) & (df['time'] <= end)]
 
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
@@ -605,7 +622,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 			go.Scatter(
 				x=df_result['time'],
 				y=df_result['saturation'],
-				name=f"lifetime {i+1}",
+				name=f"saturation {i+1}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
@@ -613,38 +630,38 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		)
 
 
-		ez_df = window_df[['time', 'status']]
-		num_oks = []
+		# ez_df = window_df[['time', 'status']]
+		# num_oks = []
 
-		for end_time in ez_df['time']:
-			start_time =  max(end_time - data['experiment']['window_length_ms'] / 1000, 0)
+		# for end_time in ez_df['time']:
+		# 	start_time =  max(end_time - data['experiment']['window_length_ms'] / 1000, 0)
 
-			mask = (ez_df['time'] >= start_time) & (ez_df['time'] < end_time)
+		# 	mask = (ez_df['time'] >= start_time) & (ez_df['time'] < end_time)
 
-			# Filter the rows based on the mask
-			filtered_df = ez_df.loc[mask]
+		# 	# Filter the rows based on the mask
+		# 	filtered_df = ez_df.loc[mask]
 
-			# count the number of OKs
-			num_oks.append(len(filtered_df[filtered_df['status'] == 'OK']))
+		# 	# count the number of OKs
+		# 	num_oks.append(len(filtered_df[filtered_df['status'] == 'OK']))
 
-			# pprint(filtered_df)
+		# 	# pprint(filtered_df)
 
 
-		fig.add_trace(
-			go.Scatter(
-				x = ez_df['time'],
-				y = num_oks,
-				name = "num OKs",
-				mode = "lines+markers",
-				line_color = "violet",
-				opacity = 0.7
-			)
-		)
+		# fig.add_trace(
+		# 	go.Scatter(
+		# 		x = ez_df['time'],
+		# 		y = num_oks,
+		# 		name = "num OKs",
+		# 		mode = "lines+markers",
+		# 		line_color = "violet",
+		# 		opacity = 0.7
+		# 	)
+		# )
 
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
-	    yaxis_title_text = "saturation",
+	    # yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	    
 		xaxis_range = [0, data['experiment']['duration'] + 1],
@@ -672,8 +689,8 @@ def get_num_oks(df, window_len_ms: float, fig):
 	num_oks = []
 	for end_time in df['time_ms']:
 		start_time =  max(end_time - window_len_ms, 0)
-		mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time)
-		# mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time) | (df['time_ms'] == end_time) # all the times within the window
+		# mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time)
+		mask = (df['time_ms'] > start_time) & (df['time_ms'] < end_time) | (df['time_ms'] == end_time) # all the times within the window
 
 		# get the number of OKs within the window
 		num_oks.append(df[mask][df['status'] == 'OK'].shape[0])
@@ -693,7 +710,8 @@ def get_num_oks(df, window_len_ms: float, fig):
 			x = df['time_ms'] / 1000,
 			y = df['num_oks'],
 			name = "num OKs",
-			mode = "lines",
+			line=dict(shape='hv', color='yellow'),
+			mode = "lines+markers",
 			line_color = "yellow",
 			opacity = 0.7
 		)
@@ -750,8 +768,8 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 			subplot.add_trace(trace, row=i+1, col=1)
 		for shape in fig.layout.shapes:
 			subplot.add_shape(shape, row=i+1, col=1)
-		for annotation in fig.layout.annotations:
-			subplot.add_annotation(annotation, row=i+1, col=1)
+		# for annotation in fig.layout.annotations:
+		# 	subplot.add_annotation(annotation, row=i+1, col=1)
 
 	subplot.update_layout(
 	    template = "plotly_dark",

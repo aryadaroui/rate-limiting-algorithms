@@ -8,13 +8,14 @@ from typing import Callable
 from rate_limiters import *
 import globals
 
-def generate_times(rps: float, duration: float) -> list:
-	''' Generates a list of times in milliseconds.'''
-	times_ms = []
-	interval = 1000 / rps
-	for i in range(int(rps * duration)):
-		times_ms.append((i + 1) * interval)  # i + 1 to make it not start at 0
-	return times_ms
+
+def generate_times(rps: float, duration: float, start_time: float = 0.0) -> list:
+    ''' Generates a list of times in milliseconds starting from the given start time.'''
+    times_ms = []
+    interval = 1000 / rps
+    for i in range(int(rps * duration)):
+        times_ms.append(start_time + (i + 1) * interval)  # i + 1 to make it not start at 0
+    return times_ms
 
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
@@ -48,14 +49,14 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 	globals.cache.reset()
 	return fig
 
-
 RPS = 10  # requests per second for experiment input
-DURATION = 2.0  # duration of experiment in seconds
+DURATION = 3.0  # duration of experiment in seconds
 
 LIMIT = 5  # max requests allowed
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-TIMES_MS = generate_times(RPS, DURATION) + [2500]
+# TIMES_MS = generate_times(RPS, DURATION) + generate_times(RPS / 2, DURATION / 2, (DURATION) * 1000 + 2000)
+TIMES_MS = generate_times(RPS, DURATION)
 
 if __name__ == "__main__":
 
