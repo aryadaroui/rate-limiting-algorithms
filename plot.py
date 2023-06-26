@@ -37,19 +37,19 @@ def plot_discrete_window(data: dict, title_append=''):
 
 		fig.add_vline(
 			x = window_start, 
-			line_width = 2, 
+			line_width = 3, 
 			line_color = "darkgreen", 
 			layer = "below", 
-			opacity = 0.6, 
+			opacity = 0.5, 
 			line_dash = "solid"
 		)
 
 		fig.add_vline(
 		    x = window_end,
-		    line_width = 2,
+		    line_width = 3,
 		    line_color = "darkred",
 		    layer = "below",
-		    opacity = 0.75,
+		    opacity = 0.7,
 		    line_dash = "solid",
 		)
 
@@ -172,11 +172,14 @@ def plot_exclusion_window(data: dict, title_append=''):
 
 	exclusion_window = 1 / data['experiment']['rps_threshold']
 
-	first_ok_times = df[df['status'] == 'OK'].groupby((df['status'] != df['status'].shift()).cumsum()).first()['time'].tolist()
-	for first_ok_time in first_ok_times:
+
+	window_starts =  list(df[df['status'] == 'OK']['time'])
+	window_ends = list(map(lambda x: x + exclusion_window, window_starts))
+
+	for window_start, window_end in zip(window_starts, window_ends):
 		fig.add_vrect(
-		    x0 = first_ok_time,
-		    x1 = first_ok_time + exclusion_window,
+		    x0 = window_start,
+		    x1 = window_end,
 		    fillcolor = "gray",
 		    opacity = 0.05,
 		    layer = "below",
@@ -184,20 +187,20 @@ def plot_exclusion_window(data: dict, title_append=''):
 		)
 
 		fig.add_vline(
-			x = first_ok_time,
-			line_width = 2,
-			line_color = "darkgreen",
-			layer = "below",
-			opacity = 0.5,
+			x = window_start, 
+			line_width = 3, 
+			line_color = "darkgreen", 
+			layer = "below", 
+			opacity = 0.5, 
 			line_dash = "solid"
 		)
 
 		fig.add_vline(
-		    x = first_ok_time + exclusion_window,
-		    line_width = 2,
+		    x = window_end,
+		    line_width = 3,
 		    line_color = "darkred",
 		    layer = "below",
-		    opacity = 0.5,
+		    opacity = 0.7,
 		    line_dash = "solid",
 		)
 
@@ -694,7 +697,6 @@ def get_num_oks(df, window_len_ms: float, fig):
 
 	return fig
 
-
 def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	subplot = make_subplots(
 		rows=len(figs),
@@ -725,8 +727,6 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	subplot.update_xaxes(title_text="time [s]", row=len(figs), col=1)
 
 	return subplot
-
-
 
 def debugger_is_active() -> bool:
 	"""Return if the debugger is currently active"""

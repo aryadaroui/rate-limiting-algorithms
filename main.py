@@ -100,26 +100,27 @@ if __name__ == "__main__":
 
 	figs = []
 
-	figs.append(
-		experiment(
-			discrete_window, {
-				'key': 'global',
-				'threshold': LIMIT,
-				'window_length_ms': WINDOW_LENGTH_MS
-			}, plot_discrete_window
-		)
-	)
 
 	# figs.append(
 	# 	experiment(
-	# 		exclusion_window,
-	# 		{
+	# 		discrete_window, {
 	# 			'key': 'global',
-    # 			'rps_threshold': LIMIT
-	# 		},
-	# 		plot_exclusion_window
+	# 			'threshold': LIMIT,
+	# 			'window_length_ms': WINDOW_LENGTH_MS
+	# 		}, plot_discrete_window
 	# 	)
 	# )
+
+	figs.append(
+		experiment(
+			exclusion_window,
+			{
+				'key': 'global',
+    			'rps_threshold': LIMIT
+			},
+			plot_exclusion_window
+		)
+	)
 
 	# figs.append(
 	#     experiment(

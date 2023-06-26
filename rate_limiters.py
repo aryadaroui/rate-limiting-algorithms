@@ -154,37 +154,3 @@ def extrapolating_window(key: str, threshold: float, window_length_ms: float = 1
 		return extrapolating_window_hard(key, threshold, window_length_ms)
 	else:
 		raise ValueError('Invalid mode')
-
-
-# # may have just made sliding window again lol. may not use this anyway
-# def leaky_bucket(key: str, rate: float, capacity: float) -> dict:
-#     current_time = globals.CURRENT_TIME
-#     cache_target = cache.get(key)
-
-#     if cache_target is not None:
-#         return {"status": "DENIED"}
-#     else:
-#         cache.set(key, {"water_level": 0, "last_leak": current_time}, capacity / rate)
-#         return {"status": "OK"}
-
-# def leaky_bucket_add_water(key: str, amount: float) -> bool:
-#     current_time = globals.CURRENT_TIME
-#     cache_target = cache.get(key)
-
-#     if cache_target is None:
-#         return False
-
-#     water_level = cache_target["water_level"]
-#     last_leak = cache_target["last_leak"]
-#     time_since_last_leak = current_time - last_leak
-#     rate = 1 / (cache_target["ttl"] / capacity)
-
-#     water_level -= time_since_last_leak * rate
-#     water_level = max(water_level, 0)
-
-#     if water_level + amount <= capacity:
-#         water_level += amount
-#         cache.set(key, {"water_level": water_level, "last_leak": current_time}, cache_target["ttl"])
-#         return True
-#     else:
-#         return False
