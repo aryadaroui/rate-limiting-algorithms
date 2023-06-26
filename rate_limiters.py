@@ -65,7 +65,7 @@ def sliding_window(key: str, threshold: float, window_length_ms: float = 1000):
 
 		if len(times) < threshold:
 			times.append(globals.CURRENT_TIME)
-			cache.set(key, {'times': times}, window_length_ms)
+			cache.set(key, {'times': times}, window_length_ms) #TODO: make method for storing list / set in cache
 			return {"status": "OK", "saturation": len(times), "new": False}
 		else:
 			return {"status": "DENIED", "saturation": len(times), "new": False}

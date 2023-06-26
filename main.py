@@ -55,8 +55,46 @@ DURATION = 3.0  # duration of experiment in seconds
 LIMIT = 5  # max requests allowed
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-# TIMES_MS = generate_times(RPS, DURATION) + generate_times(RPS / 2, DURATION / 2, (DURATION) * 1000 + 2000)
 TIMES_MS = generate_times(RPS, DURATION)
+# TIMES_MS = [
+# 	100,
+# 	700,
+# 	800,
+# 	900,
+# 	1000,
+# 	1100,
+# 	1200,
+# 	1300,
+# 	1400,
+# 	1500,
+# 	1600,
+# 	1700,
+# 	1800,
+# 	1900,
+# 	2000,
+# 	2100
+# ]
+
+# TIMES_MS = [
+# 	100,
+# 	110,
+# 	120,
+# 	130,
+# 	140,
+# 	150,
+# 	1200,
+# 	1210,
+# 	1220,
+# 	1230,
+# 	1240,
+# 	1250,
+# 	2300,
+# 	2310,
+# 	2320,
+# 	2330,
+# 	2340,
+# 	2350,
+# ]
 
 if __name__ == "__main__":
 
@@ -72,61 +110,61 @@ if __name__ == "__main__":
 		)
 	)
 
-	figs.append(
-		experiment(
-			exclusion_window,
-			{
-				'key': 'global',
-    			'rps_threshold': LIMIT
-			},
-			plot_exclusion_window
-		)
-	)
+	# figs.append(
+	# 	experiment(
+	# 		exclusion_window,
+	# 		{
+	# 			'key': 'global',
+    # 			'rps_threshold': LIMIT
+	# 		},
+	# 		plot_exclusion_window
+	# 	)
+	# )
 
-	figs.append(
-	    experiment(
-	        extrapolating_window, {
-	            'key': 'global',
-	            'threshold': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'soft'
-	        }, plot_extrapolating_window
-	    )
-	)
+	# figs.append(
+	#     experiment(
+	#         extrapolating_window, {
+	#             'key': 'global',
+	#             'threshold': LIMIT,
+	#             'window_length_ms': WINDOW_LENGTH_MS,
+	#             'mode': 'soft'
+	#         }, plot_extrapolating_window
+	#     )
+	# )
 
-	figs.append(
-	    experiment(
-	        extrapolating_window, {
-	            'key': 'global',
-	            'threshold': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'hard'
-	        }, plot_extrapolating_window
-	    )
-	)
+	# figs.append(
+	#     experiment(
+	#         extrapolating_window, {
+	#             'key': 'global',
+	#             'threshold': LIMIT,
+	#             'window_length_ms': WINDOW_LENGTH_MS,
+	#             'mode': 'hard'
+	#         }, plot_extrapolating_window
+	#     )
+	# )
 
-	figs.append(
-	    experiment(
-	        sliding_window, {
-	            'key': 'global',
-	            'threshold': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	        }, plot_sliding_window
-	    )
-	)
+	# figs.append(
+	#     experiment(
+	#         sliding_window, {
+	#             'key': 'global',
+	#             'threshold': LIMIT,
+	#             'window_length_ms': WINDOW_LENGTH_MS,
+	#         }, plot_sliding_window
+	#     )
+	# )
 
 
 	for fig in figs:
 		fig.show()
 
-	figs_to_subplot(
-		figs,
-		subplot_titles = [
-			'Discrete window',
-			'Exclusion window',
-			'Extrapolating window, soft',
-			'Extrapolating window, hard',
-	        'Sliding window'
-		],
-		vertical_spacing = 0.05
-	).show()
+	# figs_to_subplot(
+	# 	figs,
+	# 	subplot_titles = [
+	# 		'Discrete window',
+	# 		'Exclusion window',
+	# 		'Extrapolating window, soft',
+	# 		'Extrapolating window, hard',
+	#         'Sliding window'
+	# 	],
+	# 	vertical_spacing = 0.05
+	# ).show()
