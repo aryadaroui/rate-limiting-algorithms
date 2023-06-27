@@ -122,50 +122,50 @@ if __name__ == "__main__":
 	# 	)
 	# )
 
-	figs.append(
-	    experiment(
-	        extrapolating_window, {
-	            'key': 'global',
-	            'threshold': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'soft'
-	        }, plot_extrapolating_window
-	    )
-	)
-
-	figs.append(
-	    experiment(
-	        extrapolating_window, {
-	            'key': 'global',
-	            'threshold': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'hard'
-	        }, plot_extrapolating_window
-	    )
-	)
-
 	# figs.append(
 	#     experiment(
-	#         sliding_window, {
+	#         extrapolating_window, {
 	#             'key': 'global',
 	#             'threshold': LIMIT,
 	#             'window_length_ms': WINDOW_LENGTH_MS,
-	#         }, plot_sliding_window
+	#             'mode': 'soft'
+	#         }, plot_extrapolating_window
 	#     )
 	# )
 
+	# figs.append(
+	#     experiment(
+	#         extrapolating_window, {
+	#             'key': 'global',
+	#             'threshold': LIMIT,
+	#             'window_length_ms': WINDOW_LENGTH_MS,
+	#             'mode': 'hard'
+	#         }, plot_extrapolating_window
+	#     )
+	# )
 
-	# for fig in figs:
-	# 	fig.show()
+	figs.append(
+	    experiment(
+	        sliding_window, {
+	            'key': 'global',
+	            'threshold': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	        }, plot_sliding_window
+	    )
+	)
 
-	figs_to_subplot(
-		figs,
-		subplot_titles = [
-			'Discrete window',
-			'Exclusion window',
-			'Extrapolating window, soft',
-			'Extrapolating window, hard',
-	        'Sliding window'
-		],
-		vertical_spacing = 0.05
-	).show()
+
+	for fig in figs:
+		fig.show()
+
+	# figs_to_subplot(
+	# 	figs,
+	# 	subplot_titles = [
+	# 		'Discrete window',
+	# 		'Exclusion window',
+	# 		'Extrapolating window, soft',
+	# 		'Extrapolating window, hard',
+	#         'Sliding window'
+	# 	],
+	# 	vertical_spacing = 0.05
+	# ).show()

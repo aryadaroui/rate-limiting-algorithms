@@ -239,8 +239,6 @@ def plot_extrapolating_window(data: dict, title_append=''):
 	fig = go.Figure()
 
 	df['time'] = df['time_ms'] / 1000  # convert to seconds
-	# pprint(df)
-
 
 	# the OKs
 	fig.add_trace(
@@ -273,9 +271,7 @@ def plot_extrapolating_window(data: dict, title_append=''):
 	    )
 	)
 
-	
-
-	# the limit & threshold
+	# the limit
 	fig.add_hline(
 	    y = data['experiment']['threshold'],
 	    line_width = 1,
@@ -335,7 +331,6 @@ def plot_extrapolating_window(data: dict, title_append=''):
 		    line_dash = "solid",
 		)
 
-
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
 		# create new dataframe with incremented saturation
@@ -367,7 +362,6 @@ def plot_extrapolating_window(data: dict, title_append=''):
 
 	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
 
-	# fig.show()
 	return fig
 
 def plot_sliding_window(data: dict, title_append: str = ""):
@@ -454,17 +448,15 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	)
 
 
-	# get the lifetimes
-
-
-
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
-	window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
-	window_ends = window_ends['time'] + data['experiment']['window_length_ms'] / 1000
-	# window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
+	window_starts_inf = window_starts + [float('inf')] # dupe widnow_starts w/ inf at the end so we can iterate over pairs
 
-	for window_start, window_end in zip(window_starts, window_ends):
+	for idx, window_start in enumerate(window_starts):
+		window_df = df[(df['time'] >= window_starts_inf[idx]) & (df['time'] < window_starts_inf[idx + 1])]
+		last_ok = window_df[window_df['status'] == 'OK'].tail(1)['time'].values[0]
+		window_end = last_ok + data['experiment']['window_length_ms'] / 1000
+
 		fig.add_vrect(
 		    x0 = window_start,
 		    x1 = window_end,
@@ -492,16 +484,6 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		    line_dash = "solid",
 		)
 
-
-
-
-	
-	# saturation
-	for i in range(len(window_starts)):
-		start = window_starts[i]
-		end = window_ends[i]
-		window_df = df[(df['time'] > start) & (df['time'] <= end)]
-
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
 		# create new dataframe with incremented saturation
@@ -514,7 +496,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 			go.Scatter(
 				x=df_result['time'],
 				y=df_result['saturation'],
-				name=f"saturation {i+1}",
+				name=f"counter #{idx}",
 				mode = "lines",
 				line_color = "slateblue",
 				opacity = 0.7
@@ -522,33 +504,86 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		)
 
 
-		# ez_df = window_df[['time', 'status']]
-		# num_oks = []
+	# # get the lifetimes
+	# window_starts =  df.loc[df['new'] == True, 'time'].tolist()
+	# window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
+	# window_ends = window_ends['time'] + data['experiment']['window_length_ms'] / 1000
+	# # window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
 
-		# for end_time in ez_df['time']:
-		# 	start_time =  max(end_time - data['experiment']['window_length_ms'] / 1000, 0)
+	# for idx, (window_start, window_end) in enumerate(zip(window_starts, window_ends)):
+	# 	fig.add_vrect(
+	# 	    x0 = window_start,
+	# 	    x1 = window_end,
+	# 	    fillcolor = "gray",
+	# 	    opacity = 0.05,
+	# 	    layer = "below",
+	# 	    line_width = 0,
+	# 	)
 
-		# 	mask = (ez_df['time'] >= start_time) & (ez_df['time'] < end_time)
+	# 	fig.add_vline(
+	# 		x = window_start, 
+	# 		line_width = 2,
+	# 		line_color = "darkgreen",
+	# 		layer = "below",
+	# 		opacity = 0.5,
+	# 		line_dash = "solid"
+	# 	)
 
-		# 	# Filter the rows based on the mask
-		# 	filtered_df = ez_df.loc[mask]
+	# 	fig.add_vline(
+	# 	    x = window_end,
+	# 	    line_width = 2,
+	# 	    line_color = "darkred",
+	# 	    layer = "below",
+	# 	    opacity = 0.5,
+	# 	    line_dash = "solid",
+	# 	)
 
-		# 	# count the number of OKs
-		# 	num_oks.append(len(filtered_df[filtered_df['status'] == 'OK']))
+	# 	window_df = df[(df['time'] > window_start) & (df['time'] <= window_end)]
 
-		# 	# pprint(filtered_df)
+	# 	df_filtered = window_df.loc[df['status'] == 'OK']
 
+	# 	# create new dataframe with incremented saturation
+	# 	df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
 
-		# fig.add_trace(
-		# 	go.Scatter(
-		# 		x = ez_df['time'],
-		# 		y = num_oks,
-		# 		name = "num OKs",
-		# 		mode = "lines+markers",
-		# 		line_color = "violet",
-		# 		opacity = 0.7
-		# 	)
-		# )
+	# 	# concatenate original dataframe with new dataframe
+	# 	df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
+	# 	fig.add_trace(
+	# 		go.Scatter(
+	# 			x=df_result['time'],
+	# 			y=df_result['saturation'],
+	# 			name=f"counter #{idx}",
+	# 			mode = "lines",
+	# 			line_color = "slateblue",
+	# 			opacity = 0.7
+	# 		)
+	# 	)
+
+	# saturation
+	# for i in range(len(window_starts)):
+	# 	start = window_starts[i]
+	# 	end = window_ends[i]
+	# 	window_df = df[(df['time'] > start) & (df['time'] <= end)]
+
+	# 	df_filtered = window_df.loc[df['status'] == 'OK']
+
+	# 	# create new dataframe with incremented saturation
+	# 	df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+
+	# 	# concatenate original dataframe with new dataframe
+	# 	df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
+	# 	fig.add_trace(
+	# 		go.Scatter(
+	# 			x=df_result['time'],
+	# 			y=df_result['saturation'],
+	# 			name=f"saturation {i+1}",
+	# 			mode = "lines",
+	# 			line_color = "slateblue",
+	# 			opacity = 0.7
+	# 		)
+	# 	)
+
 
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
