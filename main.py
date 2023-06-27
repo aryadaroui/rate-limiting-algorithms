@@ -178,17 +178,17 @@ if __name__ == "__main__":
 	)
 
 
-	# for fig in figs:
-	# 	fig.show()
+	for fig in figs:
+		fig.show()
 
 	figs_to_subplot(
 		figs,
 		subplot_titles = [
-			'fixed_window()',
-			'enforced_avg()',
-			'leaky_bucket(), soft',
-			'leaky_bucket(), hard',
-	        'sliding_window()'
+			'Fixed window',
+			'Enforced average',
+			'Leaky bucket, soft',
+			'Leaky bucket, hard',
+	        'Sliding window'
 		],
 		vertical_spacing = 0.05
 	).show()

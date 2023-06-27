@@ -60,7 +60,7 @@ def plot_fixed_window(data: dict, title_append=''):
 			y=df_result['counter'],
 			name=f"counter #{idx}",
 			mode = "lines",
-			line_color = "slateblue",
+			line_color = "gainsboro",
 			opacity = 0.7
 		)
 	)
@@ -69,8 +69,8 @@ def plot_fixed_window(data: dict, title_append=''):
 	fig.add_hline(
 	    y = data['limit'],
 	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "solid",
+	    line_color = "deeppink",
+	    line_dash = "dash",
 	    opacity = 1,
 	)
 	fig.add_annotation(
@@ -82,7 +82,7 @@ def plot_fixed_window(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "indianred",)
+	    font = dict(color = "deeppink",)
 	)
 
 	# the OKs
@@ -116,7 +116,7 @@ def plot_fixed_window(data: dict, title_append=''):
 	    )
 	)
 
-	fig = get_num_oks(df, data['window_length_ms'], fig )
+	get_num_oks(df, data['window_length_ms'], fig )
 
 	fig.update_layout(
 	    title_text = "fixed_window() " + title_append,
@@ -199,6 +199,16 @@ def plot_enforced_avg(data: dict, title_append=''):
 		)
 
 
+
+
+	fig.add_hline(
+	    y = data['limit_rps'],
+	    line_width = 1,
+	    line_color = "deeppink",
+	    line_dash = "dash",
+	    opacity = 1,
+	)
+
 	fig.add_annotation(
 	    x = 0,
 	    y = data['limit_rps'],
@@ -208,15 +218,7 @@ def plot_enforced_avg(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "indianred",)
-	)
-
-	fig.add_hline(
-	    y = data['limit_rps'],
-	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "solid",
-	    opacity = 1,
+	    font = dict(color = "deeppink",)
 	)
 
 	fig.update_layout(
@@ -226,7 +228,7 @@ def plot_enforced_avg(data: dict, title_append=''):
 	    template = "plotly_dark",
 	)
 
-	fig = get_num_oks(df, 1000, fig )
+	get_num_oks(df, 1000, fig )
 
 	return fig
 
@@ -276,8 +278,8 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	fig.add_hline(
 	    y = data['limit'],
 	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "solid",
+	    line_color = "deeppink",
+	    line_dash = "dash",
 	    opacity = 1,
 	)
 
@@ -290,7 +292,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "indianred",)
+	    font = dict(color = "deeppink",)
 	)
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
@@ -342,7 +344,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 				y=df_result['counter'],
 				name=f"counter #{idx}",
 				mode = "lines",
-				line_color = "slateblue",
+				line_color = "gainsboro",
 				opacity = 0.7
 			)
 		)
@@ -358,7 +360,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		yaxis_range = [-1, 10],
 	)
 
-	fig = get_num_oks(df, data['window_length_ms'], fig )
+	get_num_oks(df, data['window_length_ms'], fig )
 
 	return fig	
 
@@ -404,8 +406,8 @@ def plot_leaky_bucket(data: dict, title_append=''):
 	fig.add_hline(
 	    y = data['limit'],
 	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "solid",
+	    line_color = "deeppink",
+	    line_dash = "dash",
 	    opacity = 1,
 	)
 
@@ -418,7 +420,7 @@ def plot_leaky_bucket(data: dict, title_append=''):
 	    xshift = -30,
 	    xref = 'paper',
 	    yref = 'y',
-	    font = dict(color = "indianred",)
+	    font = dict(color = "deeppink",)
 	)
 
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
@@ -474,7 +476,7 @@ def plot_leaky_bucket(data: dict, title_append=''):
 				y=df_result['counter'],
 				name=f"counter #{idx}",
 				mode = "lines",
-				line_color = "slateblue",
+				line_color = "gainsboro",
 				opacity = 0.7
 			)
 		)
@@ -489,7 +491,7 @@ def plot_leaky_bucket(data: dict, title_append=''):
 		yaxis_range = [-1, 10],
 	)
 
-	fig = get_num_oks(df, data['window_length_ms'], fig )
+	get_num_oks(df, data['window_length_ms'], fig)
 
 	return fig
 
@@ -518,15 +520,7 @@ def get_num_oks(df, window_len_ms: float, fig):
 
 	df['num_oks'] = num_oks
 
-
-	# df_duplicated = df.assign(num_oks=df[df['status'] == 'OK']['num_oks'] - 1)
-
-	# # concatenate original dataframe with new dataframe
-	# df_result = pd.concat([df, df_duplicated], ignore_index=True).sort_values(['time_ms', 'num_oks'], ascending=[True, True])
-
-	# df_result['num_oks'] = df_result['num_oks'] + 1
-
-	return fig.add_trace(
+	fig.add_trace(
 		go.Scatter(
 			x = df['time_ms'] / 1000,
 			y = df['num_oks'],
@@ -537,39 +531,6 @@ def get_num_oks(df, window_len_ms: float, fig):
 			opacity = 0.7
 		)
 	)
-
-
-
-
-	# pprint(filtered_df)
-
-
-	# ok_times = df['time_ms'][df['status'] == 'OK']
-	# ok_time_ends = ok_times + window_len
-
-	# ez_df = pd.Series(ok_times).to_frame(name='time_ms')
-	# ez_df['status'] = df['status']
-
-
-	# df[df['status'] == 'OK'].apply(lambda row: {'time_ms': row['time_ms'] + 1000.0, 'status': ''}, axis=1)
-
-	# num_ok_times = pd.concat([ok_times, ok_time_ends]).drop_duplicates().sort_values().reset_index(drop=True)
-	# num_oks = [sum((s - window_len) <= num_ok_times[:i]) for i, s in enumerate(num_ok_times)]
-
-	# fig.add_trace(
-	# 	go.Scatter(
-			
-	# 		x = num_ok_times / 1000,
-	# 		y = num_oks,
-	# 		name = "num OKs",
-	# 		mode = "lines+markers",
-	# 		line_color = "yellow",
-	# 		opacity = 0.7
-	# 	)
-
-	# )
-
-	return fig
 
 def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	subplot = make_subplots(
