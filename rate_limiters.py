@@ -12,34 +12,33 @@ import globals  # TODO: rename this to experiment_globals
 cache = globals.cache
 
 def fixed_window(key: str, limit: float, window_length_ms: float = 1000) -> dict:
-	'''Rate limits requests for target using discrete window.
+	'''Rate limits requests for target using fixed window.
     
-    Discrete window is a simple rate limiting algorithm that allows a certain number of requests per time window.
-    Window starts when the first request is made. Relies on TTL for target cache entry to reset the window.
+    Fixed window is a simple rate limiting algorithm that allows a certain number of requests per time window. The window does **not** slide. Window starts when the first request is made. Relies on TTL for target cache entry to reset the window.
     
     `key`: The key to rate limit, e.g. the IP address of the requester. This is the key used for the cache.
     
-    `threshold`: The number of requests allowed per `window_length_ms`
+    `limit`: The number of requests allowed per `window_length_ms`
     
     `window_length_ms`: The size of the time window in milliseconds.
     
-    returns: A dictionary containing `status` "OK" or "DENIED"; `saturation` is the number of requests made in the current window; if 0 then the target did not exist in the cache (i.e. first request).
+    returns: A dictionary containing `status` "OK" or "DENIED"; `counter` is the number of requests made in the current window; if 0 then the target did not exist in the cache (i.e. first request).
     '''
 
-	saturation = cache.get(key)
+	counter = cache.get(key)
 
-	if saturation is not None:  # target cache entry exists
+	if counter is not None:  # target cache entry exists
 		# cache.incr(key)  # incr() does not reset ttl (just like in Redis)
 
-		if saturation < limit:
+		if counter < limit:
 			cache.incr(key)  # incr() does not reset ttl (just like in Redis)
-			return {"status": "OK", "saturation": saturation + 1}
-		else:  # we hit saturation threshold
-			return {"status": "DENIED", "saturation": saturation}
+			return {"status": "OK", "counter": counter + 1}
+		else:  # we hit limit
+			return {"status": "DENIED", "counter": counter}
 
 	else:  # target cache entry does not exist
 		cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
-		return {"status": "OK", "saturation": 1}  # should this be 1?
+		return {"status": "OK", "counter": 1}  # should this be 1?
 
 def enforced_avg(key: str, limit_rps: float):
 	'''Rate limits requests for target using exclusion window. Could also be described as enforced average'''
@@ -58,21 +57,21 @@ def sliding_window(key: str, limit: float, window_length_ms: float = 1000):
 	entry: dict = cache.get(key)
 
 	if entry is not None:  # cache entry exists
-		times: list = entry['times']
+		times: list = entry
 
 		# remove all times that are outside the window
 		times = [time for time in times if globals.CURRENT_TIME - time < window_length_ms]
 
 		if len(times) < limit:
 			times.append(globals.CURRENT_TIME)
-			cache.set(key, {'times': times}, window_length_ms) #TODO: make method for storing list / set in cache
-			return {"status": "OK", "saturation": len(times), "new": False}
+			cache.set(key, times, window_length_ms)
+			return {"status": "OK", "counter": len(times), "new": False}
 		else:
-			return {"status": "DENIED", "saturation": len(times), "new": False}
+			return {"status": "DENIED", "counter": len(times), "new": False}
 
 	else:
-		cache.set(key, {'times': [globals.CURRENT_TIME]}, window_length_ms)
-		return {"status": "OK", "saturation": 1, "new": True}
+		cache.set(key, [globals.CURRENT_TIME], window_length_ms)
+		return {"status": "OK", "counter": 1, "new": True}
 
 def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
 
@@ -87,7 +86,7 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 
 	if entry is not None:  # cache entry exists
 
-		saturation = entry['saturation']
+		counter = entry['counter']
 		time = entry['time']
 
 		delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
@@ -95,108 +94,26 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 
 
 
-		saturation = max(saturation - (delta_time_s * rate) / window_length_s, 0)  # steady state limit
+		counter = max(counter - (delta_time_s * rate) / window_length_s, 0)  # steady state limit
 
-		if saturation + 1 < limit:  # increment the saturation
+		if counter + 1 < limit:  # increment the counter
 			cache.set(
 				key, {
-					'saturation': saturation + 1,
+					'counter': counter + 1,
 					'time': globals.CURRENT_TIME
-				}, (saturation + 1) * 1000 / rate
+				}, (counter + 1) * 1000 / rate
 			)
 			
 			# set the target cache entry with ttl
-			return {"status": "OK", "saturation": saturation + 1, "new": False}
-		else:  # we hit saturation threshold
-			return {"status": "DENIED", "saturation": saturation, "new": False}
+			return {"status": "OK", "counter": counter + 1, "new": False}
+		else:  # we hit counter threshold
+			return {"status": "DENIED", "counter": counter, "new": False}
 
 	else:  # cache entry does not exist
 		cache.set(
 			key, {
-				'saturation': 1,
+				'counter': 1,
 				'time': globals.CURRENT_TIME
 			}, window_length_ms / rate
 		)  # set the target cache entry with ttl
-		return {"status": "OK", "saturation": 1, "new": True}
-
-
-
-
-	def extrapolating_window_soft(key: str, limit: float, window_length_ms: float = 1000) -> dict:
-
-		entry: dict = cache.get(key)
-
-		if entry is not None:  # cache entry exists
-
-			saturation = entry['saturation']
-			time = entry['time']
-
-			delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
-			window_length_s = window_length_ms / 1000  # window length in seconds
-
-			saturation = max(saturation - (delta_time_s * limit) / window_length_s, 0)  # steady state limit
-
-			if saturation + 1 < limit:  # increment the saturation
-				cache.set(
-					key, {
-						'saturation': saturation + 1,
-						'time': globals.CURRENT_TIME
-					}, (saturation + 1) * 1000 / limit
-				)
-				
-				# set the target cache entry with ttl
-				return {"status": "OK", "saturation": saturation + 1, "new": False}
-			else:  # we hit saturation threshold
-				return {"status": "DENIED", "saturation": saturation, "new": False}
-
-		else:  # cache entry does not exist
-			cache.set(
-				key, {
-					'saturation': 1,
-					'time': globals.CURRENT_TIME
-				}, window_length_ms / limit
-			)  # set the target cache entry with ttl
-			return {"status": "OK", "saturation": 1, "new": True}
-
-	def extrapolating_window_hard(key: str, limit: float, window_length_ms: float = 1000) -> dict:
-
-		entry: dict = cache.get(key)
-
-		if entry is not None:  # cache entry exists
-
-			saturation = entry['saturation']
-			time = entry['time']
-
-			delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
-			window_length_s = window_length_ms / 1000  # window length in seconds
-
-			saturation = max(saturation - (delta_time_s) / window_length_s, 0)  # transient limit
-
-			if saturation + 1 < limit:  # increment the saturation
-				cache.set(
-					key, {
-						'saturation': saturation + 1,
-						'time': globals.CURRENT_TIME
-					}, (saturation + 1) * 1000
-				)
-				
-				# set the target cache entry with ttl
-				return {"status": "OK", "saturation": saturation + 1, "new": False}
-			else:  # we hit saturation threshold
-				return {"status": "DENIED", "saturation": saturation, "new": False}
-
-		else:  # cache entry does not exist
-			cache.set(
-				key, {
-					'saturation': 1,
-					'time': globals.CURRENT_TIME
-				}, window_length_ms
-			)  # set the target cache entry with ttl
-			return {"status": "OK", "saturation": 1, "new": True}
-
-	if mode == 'soft':
-		return extrapolating_window_soft(key, limit, window_length_ms)
-	elif mode == 'hard':
-		return extrapolating_window_hard(key, limit, window_length_ms)
-	else:
-		raise ValueError('Invalid mode')
+		return {"status": "OK", "counter": 1, "new": True}

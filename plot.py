@@ -19,7 +19,7 @@ def plot_fixed_window(data: dict, title_append=''):
 
 	df['time'] = df['time_ms'] / 1000  # convert to seconds
 
-	window_starts =  list(df[df['saturation'] == 1]['time'])
+	window_starts =  list(df[df['counter'] == 1]['time'])
 	window_ends = list(map(lambda x: x + data['window_length_ms'] / 1000, window_starts))
 
 	for idx, (window_start, window_end) in enumerate(zip(window_starts, window_ends)):
@@ -51,13 +51,13 @@ def plot_fixed_window(data: dict, title_append=''):
 		)
 
 		window_df = df[(df['time'] >= window_start) & (df['time'] < window_end)]
-		df_duplicated = window_df.assign(saturation=window_df['saturation'] - 1)
-		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+		df_duplicated = window_df.assign(saturation=window_df['counter'] - 1)
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
 
 		fig.add_trace(
 		go.Scatter(
 			x=df_result['time'],
-			y=df_result['saturation'],
+			y=df_result['counter'],
 			name=f"counter #{idx}",
 			mode = "lines",
 			line_color = "slateblue",
@@ -331,15 +331,15 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
 		# create new dataframe with incremented saturation
-		df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+		df_duplicated = df_filtered.assign(saturation=df_filtered['counter'] - 1)
 
 		# concatenate original dataframe with new dataframe
-		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
 
 		fig.add_trace(
 			go.Scatter(
 				x=df_result['time'],
-				y=df_result['saturation'],
+				y=df_result['counter'],
 				name=f"counter #{idx}",
 				mode = "lines",
 				line_color = "slateblue",
@@ -429,9 +429,9 @@ def plot_leaky_bucket(data: dict, title_append=''):
 		last_ok = window_df[window_df['status'] == 'OK'].tail(1)['time'].values[0]
 
 		if data['mode'] == 'soft':
-			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0] / data['limit']) * data['window_length_ms'] / 1000
+			window_end = last_ok + (window_df[window_df['time'] == last_ok]['counter'].values[0] / data['limit']) * data['window_length_ms'] / 1000
 		else:
-			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0]) * data['window_length_ms'] / 1000
+			window_end = last_ok + (window_df[window_df['time'] == last_ok]['counter'].values[0]) * data['window_length_ms'] / 1000
 
 		fig.add_vrect(
 		    x0 = window_start,
@@ -463,15 +463,15 @@ def plot_leaky_bucket(data: dict, title_append=''):
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
 		# create new dataframe with incremented saturation
-		df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+		df_duplicated = df_filtered.assign(saturation=df_filtered['counter'] - 1)
 
 		# concatenate original dataframe with new dataframe
-		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
 
 		fig.add_trace(
 			go.Scatter(
 				x=df_result['time'],
-				y=df_result['saturation'],
+				y=df_result['counter'],
 				name=f"counter #{idx}",
 				mode = "lines",
 				line_color = "slateblue",
@@ -510,11 +510,11 @@ def get_num_oks(df, window_len_ms: float, fig):
 	num_oks = []
 	for end_time in df['time_ms']:
 		start_time =  max(end_time - window_len_ms, 0)
-		# mask = (df['time_ms'] >= start_time) & (df['time_ms'] < end_time)
+
 		mask = (df['time_ms'] > start_time) & (df['time_ms'] < end_time) | (df['time_ms'] == end_time) # all the times within the window
 
 		# get the number of OKs within the window
-		num_oks.append(df[mask][df['status'] == 'OK'].shape[0])
+		num_oks.append(df.loc[mask, 'status'].eq('OK').sum())
 
 	df['num_oks'] = num_oks
 
