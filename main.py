@@ -34,11 +34,9 @@ def generate_times(rps: float, duration: float, start_time: float = 0.0) -> list
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
 	data = {
-
-	        "rate_limiter": rate_limiter.__name__,
-	        "rps": RPS,
-	        "duration": DURATION,
-
+		"rate_limiter": rate_limiter.__name__,
+		"rps": RPS,
+		"duration": DURATION,
 	    "plot": []
 	}
 
@@ -69,126 +67,145 @@ DURATION = 3.0  # duration of experiment in seconds
 LIMIT = 5  # max # of requests allowed per window
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-# uniform
-TIMES_MS = generate_times(RPS, DURATION) 
+uniform_times = generate_times(RPS, DURATION) 
+random_times = generate_random_times(50, 5)
+cross_window_times = [
+	100,
+	700,
+	800,
+	900,
+	1000,
+	1100,
+	1200,
+	1300,
+	1400,
+	1500,
+	1600,
+	1700,
+	1800,
+	1900,
+	2000,
+	2100
+]
+bursts_times = [
+	100,
+	110,
+	120,
+	130,
+	140,
+	150,
+	1200,
+	1210,
+	1220,
+	1230,
+	1240,
+	1250,
+	2300,
+	2310,
+	2320,
+	2330,
+	2340,
+	2350,
+	7099
+]
 
-# cross-window
-# TIMES_MS = [
-# 	100,
-# 	700,
-# 	800,
-# 	900,
-# 	1000,
-# 	1100,
-# 	1200,
-# 	1300,
-# 	1400,
-# 	1500,
-# 	1600,
-# 	1700,
-# 	1800,
-# 	1900,
-# 	2000,
-# 	2100
-# ]
+def experiment_batch(limiters: list, single_plots: bool, subplots: bool):
+	
+	figs = []
+	subplot_titles = []
 
-# quick burst
-# TIMES_MS = [
-# 	100,
-# 	110,
-# 	120,
-# 	130,
-# 	140,
-# 	150,
-# 	1200,
-# 	1210,
-# 	1220,
-# 	1230,
-# 	1240,
-# 	1250,
-# 	2300,
-# 	2310,
-# 	2320,
-# 	2330,
-# 	2340,
-# 	2350,
-# 	7099
-# ]
+	if fixed_window in limiters:
+		subplot_titles.append('Fixed window')
+		figs.append(
+			experiment(
+				fixed_window, {
+					'key': 'global',
+					'limit': LIMIT,
+					'window_length_ms': WINDOW_LENGTH_MS
+				}, plot_fixed_window
+			)
+		)
+	if enforced_avg in limiters:
+		subplot_titles.append('Enforced average')
+		figs.append(
+			experiment(
+				enforced_avg,
+				{
+					'key': 'global',
+	    			'limit_rps': LIMIT
+				},
+				plot_enforced_avg
+			)
+		)
+	if leaky_bucket in limiters:
+		subplot_titles.append('Leaky bucket, soft')
+		figs.append(
+		    experiment(
+		        leaky_bucket, {
+		            'key': 'global',
+		            'limit': LIMIT,
+		            'window_length_ms': WINDOW_LENGTH_MS,
+		            'mode': 'soft'
+		        }, plot_leaky_bucket
+		    )
+		)
+		subplot_titles.append('Leaky bucket, hard')
+		figs.append(
+		    experiment(
+		        leaky_bucket, {
+		            'key': 'global',
+		            'limit': LIMIT,
+		            'window_length_ms': WINDOW_LENGTH_MS,
+		            'mode': 'hard'
+		        }, plot_leaky_bucket
+		    )
+		)
+	if sliding_window in limiters:
+		subplot_titles.append('Sliding window')
+		figs.append(
+			experiment(
+				sliding_window, {
+					'key': 'global',
+					'limit': LIMIT,
+					'window_length_ms': WINDOW_LENGTH_MS,
+				}, plot_sliding_window
+			)
+		)
+	
 
-# random
-# TIMES_MS = generate_random_times(25, 5)
+	if single_plots:
+		for fig in figs:
+			fig.show()
 
-
+	if subplots:
+		figs_to_subplot(
+			figs,
+			subplot_titles = subplot_titles,
+			vertical_spacing = 0.05
+		).show()
 
 if __name__ == "__main__":
 
-	figs = []
-
-	figs.append(
-		experiment(
-			fixed_window, {
-				'key': 'global',
-				'limit': LIMIT,
-				'window_length_ms': WINDOW_LENGTH_MS
-			}, plot_fixed_window
-		)
-	)
-
-	figs.append(
-		experiment(
+	TIMES_MS = uniform_times
+	experiment_batch(
+		[
+			fixed_window,
 			enforced_avg,
-			{
-				'key': 'global',
-    			'limit_rps': LIMIT
-			},
-			plot_enforced_avg
-		)
-	)
-
-	figs.append(
-	    experiment(
-	        leaky_bucket, {
-	            'key': 'global',
-	            'limit': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'soft'
-	        }, plot_leaky_bucket
-	    )
-	)
-
-	figs.append(
-	    experiment(
-	        leaky_bucket, {
-	            'key': 'global',
-	            'limit': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	            'mode': 'hard'
-	        }, plot_leaky_bucket
-	    )
-	)
-
-	figs.append(
-	    experiment(
-	        sliding_window, {
-	            'key': 'global',
-	            'limit': LIMIT,
-	            'window_length_ms': WINDOW_LENGTH_MS,
-	        }, plot_sliding_window
-	    )
-	)
-
-
-	for fig in figs:
-		fig.show()
-
-	figs_to_subplot(
-		figs,
-		subplot_titles = [
-			'Fixed window',
-			'Enforced average',
-			'Leaky bucket, soft',
-			'Leaky bucket, hard',
-	        'Sliding window'
+			leaky_bucket,
+			sliding_window
 		],
-		vertical_spacing = 0.05
-	).show()
+		single_plots = False,
+		subplots = True
+	)
+
+	TIMES_MS = random_times
+	experiment_batch(
+		[
+			fixed_window,
+			enforced_avg,
+			leaky_bucket,
+			sliding_window
+		],
+		single_plots = False,
+		subplots = True
+	)
