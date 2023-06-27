@@ -10,10 +10,7 @@ from main import DURATION, LIMIT
 
 rich.traceback.install()  # prettier traceback
 
-# TODO: make general function to get numOKs. DONE
-# TODO: make a general function to get counter (saturation). 
-
-def plot_discrete_window(data: dict, title_append=''):
+def plot_fixed_window(data: dict, title_append=''):
 	"""Plot the discrete window data"""
 
 
@@ -23,7 +20,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	df['time'] = df['time_ms'] / 1000  # convert to seconds
 
 	window_starts =  list(df[df['saturation'] == 1]['time'])
-	window_ends = list(map(lambda x: x + data['experiment']['window_length_ms'] / 1000, window_starts))
+	window_ends = list(map(lambda x: x + data['window_length_ms'] / 1000, window_starts))
 
 	for idx, (window_start, window_end) in enumerate(zip(window_starts, window_ends)):
 		fig.add_vrect(
@@ -70,7 +67,7 @@ def plot_discrete_window(data: dict, title_append=''):
 		
 	# the limit line
 	fig.add_hline(
-	    y = data['experiment']['threshold'],
+	    y = data['limit'],
 	    line_width = 1,
 	    line_color = "indianred",
 	    line_dash = "solid",
@@ -78,7 +75,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	)
 	fig.add_annotation(
 	    x = 0,
-	    y = data['experiment']['threshold'],
+	    y = data['limit'],
 	    text = "limit",
 	    showarrow = False,
 	    textangle = 270,
@@ -119,7 +116,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	    )
 	)
 
-	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
+	fig = get_num_oks(df, data['window_length_ms'], fig )
 
 	fig.update_layout(
 	    title_text = "fixed_window() " + title_append,
@@ -128,7 +125,7 @@ def plot_discrete_window(data: dict, title_append=''):
 	)
 	return fig
 
-def plot_exclusion_window(data: dict, title_append=''):
+def plot_enforced_avg(data: dict, title_append=''):
 	"""Plot the exclusion window data"""
 
 	df = pd.DataFrame(data['plot'])
@@ -169,7 +166,7 @@ def plot_exclusion_window(data: dict, title_append=''):
 	)
 
 	# the windows
-	exclusion_window = 1 / data['experiment']['rps_threshold']
+	exclusion_window = 1 / data['limit_rps']
 	window_starts =  list(df[df['status'] == 'OK']['time'])
 	window_ends = list(map(lambda x: x + exclusion_window, window_starts))
 
@@ -204,7 +201,7 @@ def plot_exclusion_window(data: dict, title_append=''):
 
 	fig.add_annotation(
 	    x = 0,
-	    y = data['experiment']['rps_threshold'],
+	    y = data['limit_rps'],
 	    text = "limit",
 	    showarrow = False,
 	    textangle = 270,
@@ -215,7 +212,7 @@ def plot_exclusion_window(data: dict, title_append=''):
 	)
 
 	fig.add_hline(
-	    y = data['experiment']['rps_threshold'],
+	    y = data['limit_rps'],
 	    line_width = 1,
 	    line_color = "indianred",
 	    line_dash = "solid",
@@ -230,137 +227,6 @@ def plot_exclusion_window(data: dict, title_append=''):
 	)
 
 	fig = get_num_oks(df, 1000, fig )
-
-	return fig
-
-def plot_extrapolating_window(data: dict, title_append=''):
-	"""Plot the sliding window data."""
-	df = pd.DataFrame(data['plot'])
-	fig = go.Figure()
-
-	df['time'] = df['time_ms'] / 1000  # convert to seconds
-
-	# the OKs
-	fig.add_trace(
-	    go.Scatter(
-	        x = df[df['status'] == "OK"]['time'],
-	        # choose y to be 0 for all OKs
-	        y = [0] * len(df[df['status'] == "OK"]['time']),
-	        name = "OK",
-	        mode = "markers",
-	        marker = dict(
-	            color = "darkturquoise",
-	            size = 10,
-	        ),
-	    )
-	)
-
-	# the DENIEDs
-	fig.add_trace(
-	    go.Scatter(
-	        x = df[df['status'] == "DENIED"]['time'],
-	        # choose y to be 0 for all OKs
-	        y = [0] * len(df[df['status'] == "DENIED"]['time']),
-	        name = "DENIED",
-	        mode = "markers",
-	        marker = dict(
-	            color = "crimson",
-	            symbol = "x",
-	            size = 10,
-	        ),
-	    )
-	)
-
-	# the limit
-	fig.add_hline(
-	    y = data['experiment']['threshold'],
-	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "solid",
-	    opacity = 1,
-	)
-
-	fig.add_annotation(
-	    x = 0,
-	    y = data['experiment']['threshold'],
-	    text = "limit",
-	    showarrow = False,
-	    textangle = 270,
-	    xshift = -30,
-	    xref = 'paper',
-	    yref = 'y',
-	    font = dict(color = "indianred",)
-	)
-
-	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
-	window_starts_inf = window_starts + [float('inf')] # dupe widnow_starts w/ inf at the end so we can iterate over pairs
-
-	for idx, window_start in enumerate(window_starts):
-		window_df = df[(df['time'] >= window_starts_inf[idx]) & (df['time'] < window_starts_inf[idx + 1])]
-		last_ok = window_df[window_df['status'] == 'OK'].tail(1)['time'].values[0]
-
-		if data['experiment']['mode'] == 'soft':
-			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0] / data['experiment']['threshold']) * data['experiment']['window_length_ms'] / 1000
-		else:
-			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0]) * data['experiment']['window_length_ms'] / 1000
-
-		fig.add_vrect(
-		    x0 = window_start,
-		    x1 = window_end,
-		    fillcolor = "gray",
-		    opacity = 0.05,
-		    layer = "below",
-		    line_width = 0,
-		)
-
-		fig.add_vline(
-			x = window_start, 
-			line_width = 2,
-			line_color = "darkgreen",
-			layer = "below",
-			opacity = 0.5,
-			line_dash = "solid"
-		)
-
-		fig.add_vline(
-		    x = window_end,
-		    line_width = 2,
-		    line_color = "darkred",
-		    layer = "below",
-		    opacity = 0.5,
-		    line_dash = "solid",
-		)
-
-		df_filtered = window_df.loc[df['status'] == 'OK']
-
-		# create new dataframe with incremented saturation
-		df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
-
-		# concatenate original dataframe with new dataframe
-		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
-
-		fig.add_trace(
-			go.Scatter(
-				x=df_result['time'],
-				y=df_result['saturation'],
-				name=f"counter #{idx}",
-				mode = "lines",
-				line_color = "slateblue",
-				opacity = 0.7
-			)
-		)
-
-	fig.update_layout(
-	    title_text = "sliding_window() " + title_append,
-	    xaxis_title_text = "time [s]",
-	    # yaxis_title_text = "saturation",
-	    template = "plotly_dark",
-	    
-		xaxis_range = [0, data['experiment']['duration'] + 1],
-		yaxis_range = [-1, 10],
-	)
-
-	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
 
 	return fig
 
@@ -406,9 +272,9 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 
 	
 
-	# the limit & threshold
+	# the limit
 	fig.add_hline(
-	    y = data['experiment']['threshold'],
+	    y = data['limit'],
 	    line_width = 1,
 	    line_color = "indianred",
 	    line_dash = "solid",
@@ -417,7 +283,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 
 	fig.add_annotation(
 	    x = 0,
-	    y = data['experiment']['threshold'],
+	    y = data['limit'],
 	    text = "limit",
 	    showarrow = False,
 	    textangle = 270,
@@ -427,35 +293,13 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    font = dict(color = "indianred",)
 	)
 
-	fig.add_hline(
-	    y = data['experiment']['threshold'] - 1,
-	    line_width = 1,
-	    line_color = "indianred",
-	    line_dash = "dash",
-	    opacity = 1,
-	)
-
-	fig.add_annotation(
-	    x = 0,
-	    y = data['experiment']['threshold'] -1,
-	    text = "threshold",
-	    showarrow = False,
-	    textangle = 270,
-	    xshift = -30,
-	    xref = 'paper',
-	    yref = 'y',
-	    font = dict(color = "indianred",)
-	)
-
-
-
 	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
 	window_starts_inf = window_starts + [float('inf')] # dupe widnow_starts w/ inf at the end so we can iterate over pairs
 
 	for idx, window_start in enumerate(window_starts):
 		window_df = df[(df['time'] >= window_starts_inf[idx]) & (df['time'] < window_starts_inf[idx + 1])]
 		last_ok = window_df[window_df['status'] == 'OK'].tail(1)['time'].values[0]
-		window_end = last_ok + data['experiment']['window_length_ms'] / 1000
+		window_end = last_ok + data['window_length_ms'] / 1000
 
 		fig.add_vrect(
 		    x0 = window_start,
@@ -504,86 +348,136 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 		)
 
 
-	# # get the lifetimes
-	# window_starts =  df.loc[df['new'] == True, 'time'].tolist()
-	# window_ends = df.groupby('new').apply(lambda group: group[group['status'] == 'OK'].tail(1))
-	# window_ends = window_ends['time'] + data['experiment']['window_length_ms'] / 1000
-	# # window_ends = window_ends['time'] + (window_ends['saturation']) * data['experiment']['window_length_ms'] / 1000
+	fig.update_layout(
+	    title_text = "sliding_window() " + title_append,
+	    xaxis_title_text = "time [s]",
+	    # yaxis_title_text = "saturation",
+	    template = "plotly_dark",
+	    
+		xaxis_range = [0, data['duration'] + 1],
+		yaxis_range = [-1, 10],
+	)
 
-	# for idx, (window_start, window_end) in enumerate(zip(window_starts, window_ends)):
-	# 	fig.add_vrect(
-	# 	    x0 = window_start,
-	# 	    x1 = window_end,
-	# 	    fillcolor = "gray",
-	# 	    opacity = 0.05,
-	# 	    layer = "below",
-	# 	    line_width = 0,
-	# 	)
+	fig = get_num_oks(df, data['window_length_ms'], fig )
 
-	# 	fig.add_vline(
-	# 		x = window_start, 
-	# 		line_width = 2,
-	# 		line_color = "darkgreen",
-	# 		layer = "below",
-	# 		opacity = 0.5,
-	# 		line_dash = "solid"
-	# 	)
+	return fig	
 
-	# 	fig.add_vline(
-	# 	    x = window_end,
-	# 	    line_width = 2,
-	# 	    line_color = "darkred",
-	# 	    layer = "below",
-	# 	    opacity = 0.5,
-	# 	    line_dash = "solid",
-	# 	)
+def plot_leaky_bucket(data: dict, title_append=''):
+	"""Plot the sliding window data."""
+	df = pd.DataFrame(data['plot'])
+	fig = go.Figure()
 
-	# 	window_df = df[(df['time'] > window_start) & (df['time'] <= window_end)]
+	df['time'] = df['time_ms'] / 1000  # convert to seconds
 
-	# 	df_filtered = window_df.loc[df['status'] == 'OK']
+	# the OKs
+	fig.add_trace(
+	    go.Scatter(
+	        x = df[df['status'] == "OK"]['time'],
+	        # choose y to be 0 for all OKs
+	        y = [0] * len(df[df['status'] == "OK"]['time']),
+	        name = "OK",
+	        mode = "markers",
+	        marker = dict(
+	            color = "darkturquoise",
+	            size = 10,
+	        ),
+	    )
+	)
 
-	# 	# create new dataframe with incremented saturation
-	# 	df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+	# the DENIEDs
+	fig.add_trace(
+	    go.Scatter(
+	        x = df[df['status'] == "DENIED"]['time'],
+	        # choose y to be 0 for all OKs
+	        y = [0] * len(df[df['status'] == "DENIED"]['time']),
+	        name = "DENIED",
+	        mode = "markers",
+	        marker = dict(
+	            color = "crimson",
+	            symbol = "x",
+	            size = 10,
+	        ),
+	    )
+	)
 
-	# 	# concatenate original dataframe with new dataframe
-	# 	df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+	# the limit
+	fig.add_hline(
+	    y = data['limit'],
+	    line_width = 1,
+	    line_color = "indianred",
+	    line_dash = "solid",
+	    opacity = 1,
+	)
 
-	# 	fig.add_trace(
-	# 		go.Scatter(
-	# 			x=df_result['time'],
-	# 			y=df_result['saturation'],
-	# 			name=f"counter #{idx}",
-	# 			mode = "lines",
-	# 			line_color = "slateblue",
-	# 			opacity = 0.7
-	# 		)
-	# 	)
+	fig.add_annotation(
+	    x = 0,
+	    y = data['limit'],
+	    text = "limit",
+	    showarrow = False,
+	    textangle = 270,
+	    xshift = -30,
+	    xref = 'paper',
+	    yref = 'y',
+	    font = dict(color = "indianred",)
+	)
 
-	# saturation
-	# for i in range(len(window_starts)):
-	# 	start = window_starts[i]
-	# 	end = window_ends[i]
-	# 	window_df = df[(df['time'] > start) & (df['time'] <= end)]
+	window_starts =  df.loc[df['new'] == True, 'time'].tolist()
+	window_starts_inf = window_starts + [float('inf')] # dupe widnow_starts w/ inf at the end so we can iterate over pairs
 
-	# 	df_filtered = window_df.loc[df['status'] == 'OK']
+	for idx, window_start in enumerate(window_starts):
+		window_df = df[(df['time'] >= window_starts_inf[idx]) & (df['time'] < window_starts_inf[idx + 1])]
+		last_ok = window_df[window_df['status'] == 'OK'].tail(1)['time'].values[0]
 
-	# 	# create new dataframe with incremented saturation
-	# 	df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+		if data['mode'] == 'soft':
+			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0] / data['limit']) * data['window_length_ms'] / 1000
+		else:
+			window_end = last_ok + (window_df[window_df['time'] == last_ok]['saturation'].values[0]) * data['window_length_ms'] / 1000
 
-	# 	# concatenate original dataframe with new dataframe
-	# 	df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+		fig.add_vrect(
+		    x0 = window_start,
+		    x1 = window_end,
+		    fillcolor = "gray",
+		    opacity = 0.05,
+		    layer = "below",
+		    line_width = 0,
+		)
 
-	# 	fig.add_trace(
-	# 		go.Scatter(
-	# 			x=df_result['time'],
-	# 			y=df_result['saturation'],
-	# 			name=f"saturation {i+1}",
-	# 			mode = "lines",
-	# 			line_color = "slateblue",
-	# 			opacity = 0.7
-	# 		)
-	# 	)
+		fig.add_vline(
+			x = window_start, 
+			line_width = 2,
+			line_color = "darkgreen",
+			layer = "below",
+			opacity = 0.5,
+			line_dash = "solid"
+		)
 
+		fig.add_vline(
+		    x = window_end,
+		    line_width = 2,
+		    line_color = "darkred",
+		    layer = "below",
+		    opacity = 0.5,
+		    line_dash = "solid",
+		)
+
+		df_filtered = window_df.loc[df['status'] == 'OK']
+
+		# create new dataframe with incremented saturation
+		df_duplicated = df_filtered.assign(saturation=df_filtered['saturation'] - 1)
+
+		# concatenate original dataframe with new dataframe
+		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'saturation'], ascending=[True, True])
+
+		fig.add_trace(
+			go.Scatter(
+				x=df_result['time'],
+				y=df_result['saturation'],
+				name=f"counter #{idx}",
+				mode = "lines",
+				line_color = "slateblue",
+				opacity = 0.7
+			)
+		)
 
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
@@ -591,13 +485,13 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    # yaxis_title_text = "saturation",
 	    template = "plotly_dark",
 	    
-		xaxis_range = [0, data['experiment']['duration'] + 1],
+		xaxis_range = [0, data['duration'] + 1],
 		yaxis_range = [-1, 10],
 	)
 
-	fig = get_num_oks(df, data['experiment']['window_length_ms'], fig )
+	fig = get_num_oks(df, data['window_length_ms'], fig )
 
-	return fig	
+	return fig
 
 def get_num_oks(df, window_len_ms: float, fig):
 	''' handles everything input in ms, but plots in s.
@@ -729,6 +623,6 @@ if __name__ == "__main__":
 
 	match filename:
 		case "discrete_window":
-			plot_discrete_window(data)
+			plot_fixed_window(data)
 		case _:
 			raise ValueError(f"No matching plot function for filename: {filename}")

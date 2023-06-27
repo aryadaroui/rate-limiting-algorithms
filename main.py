@@ -2,12 +2,26 @@ import rich.traceback
 
 rich.traceback.install()
 
+import random
 from rich.pretty import pprint
 from plot import *
 from typing import Callable
 from rate_limiters import *
 import globals
 
+def generate_random_times(num: int, duration: float, start_time: float = 0.0) -> list:
+    """
+    Generates a list of `num` random times between `start_time` and `start_time + duration`.
+
+    Args:
+        num (int): The number of random times to generate.
+        duration (float): The duration of the time range to generate random times within.
+        start_time (float, optional): The start time of the time range to generate random times within. Defaults to 0.0.
+
+    Returns:
+        list: A list of `num` random times between `start_time` and `start_time + duration`.
+    """
+    return sorted([random.uniform(start_time, (start_time + duration) * 1000) for _ in range(num)])
 
 def generate_times(rps: float, duration: float, start_time: float = 0.0) -> list:
     ''' Generates a list of times in milliseconds starting from the given start time.'''
@@ -20,16 +34,16 @@ def generate_times(rps: float, duration: float, start_time: float = 0.0) -> list
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
 	data = {
-	    "experiment": {
+
 	        "rate_limiter": rate_limiter.__name__,
 	        "rps": RPS,
 	        "duration": DURATION,
-	    },
+
 	    "plot": []
 	}
 
 	# rate limiter specific experiment data
-	data["experiment"].update(rate_limiter_args)
+	data.update(rate_limiter_args)
 
 	for time_ms in TIMES_MS:
 		globals.CURRENT_TIME = time_ms
@@ -52,10 +66,13 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 RPS = 10  # requests per second for experiment input
 DURATION = 3.0  # duration of experiment in seconds
 
-LIMIT = 5  # max requests allowed
+LIMIT = 5  # max # of requests allowed per window
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-# TIMES_MS = generate_times(RPS, DURATION)
+# uniform
+TIMES_MS = generate_times(RPS, DURATION) 
+
+# cross-window
 # TIMES_MS = [
 # 	100,
 # 	700,
@@ -75,97 +92,103 @@ WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 # 	2100
 # ]
 
-TIMES_MS = [
-	100,
-	110,
-	120,
-	130,
-	140,
-	150,
-	1200,
-	1210,
-	1220,
-	1230,
-	1240,
-	1250,
-	2300,
-	2310,
-	2320,
-	2330,
-	2340,
-	2350,
-	7099
-]
+# quick burst
+# TIMES_MS = [
+# 	100,
+# 	110,
+# 	120,
+# 	130,
+# 	140,
+# 	150,
+# 	1200,
+# 	1210,
+# 	1220,
+# 	1230,
+# 	1240,
+# 	1250,
+# 	2300,
+# 	2310,
+# 	2320,
+# 	2330,
+# 	2340,
+# 	2350,
+# 	7099
+# ]
+
+# random
+# TIMES_MS = generate_random_times(25, 5)
+
+
 
 if __name__ == "__main__":
 
 	figs = []
 
-	# figs.append(
-	# 	experiment(
-	# 		discrete_window, {
-	# 			'key': 'global',
-	# 			'threshold': LIMIT,
-	# 			'window_length_ms': WINDOW_LENGTH_MS
-	# 		}, plot_discrete_window
-	# 	)
-	# )
+	figs.append(
+		experiment(
+			fixed_window, {
+				'key': 'global',
+				'limit': LIMIT,
+				'window_length_ms': WINDOW_LENGTH_MS
+			}, plot_fixed_window
+		)
+	)
 
-	# figs.append(
-	# 	experiment(
-	# 		exclusion_window,
-	# 		{
-	# 			'key': 'global',
-    # 			'rps_threshold': LIMIT
-	# 		},
-	# 		plot_exclusion_window
-	# 	)
-	# )
+	figs.append(
+		experiment(
+			enforced_avg,
+			{
+				'key': 'global',
+    			'limit_rps': LIMIT
+			},
+			plot_enforced_avg
+		)
+	)
 
-	# figs.append(
-	#     experiment(
-	#         extrapolating_window, {
-	#             'key': 'global',
-	#             'threshold': LIMIT,
-	#             'window_length_ms': WINDOW_LENGTH_MS,
-	#             'mode': 'soft'
-	#         }, plot_extrapolating_window
-	#     )
-	# )
+	figs.append(
+	    experiment(
+	        leaky_bucket, {
+	            'key': 'global',
+	            'limit': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	            'mode': 'soft'
+	        }, plot_leaky_bucket
+	    )
+	)
 
-	# figs.append(
-	#     experiment(
-	#         extrapolating_window, {
-	#             'key': 'global',
-	#             'threshold': LIMIT,
-	#             'window_length_ms': WINDOW_LENGTH_MS,
-	#             'mode': 'hard'
-	#         }, plot_extrapolating_window
-	#     )
-	# )
+	figs.append(
+	    experiment(
+	        leaky_bucket, {
+	            'key': 'global',
+	            'limit': LIMIT,
+	            'window_length_ms': WINDOW_LENGTH_MS,
+	            'mode': 'hard'
+	        }, plot_leaky_bucket
+	    )
+	)
 
 	figs.append(
 	    experiment(
 	        sliding_window, {
 	            'key': 'global',
-	            'threshold': LIMIT,
+	            'limit': LIMIT,
 	            'window_length_ms': WINDOW_LENGTH_MS,
 	        }, plot_sliding_window
 	    )
 	)
 
 
-	for fig in figs:
-		fig.show()
+	# for fig in figs:
+	# 	fig.show()
 
-	# figs_to_subplot(
-	# 	figs,
-	# 	subplot_titles = [
-	# 		'Discrete window',
-	# 		'Exclusion window',
-	# 		'Extrapolating window, soft',
-	# 		'Extrapolating window, hard',
-	#         'Sliding window'
-	# 	],
-	# 	vertical_spacing = 0.05
-	# ).show()
+	figs_to_subplot(
+		figs,
+		subplot_titles = [
+			'fixed_window()',
+			'enforced_avg()',
+			'leaky_bucket(), soft',
+			'leaky_bucket(), hard',
+	        'sliding_window()'
+		],
+		vertical_spacing = 0.05
+	).show()
