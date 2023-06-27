@@ -51,7 +51,7 @@ def plot_fixed_window(data: dict, title_append=''):
 		)
 
 		window_df = df[(df['time'] >= window_start) & (df['time'] < window_end)]
-		df_duplicated = window_df.assign(saturation=window_df['counter'] - 1)
+		df_duplicated = window_df.assign(counter=window_df['counter'] - 1)
 		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
 
 		fig.add_trace(
@@ -330,8 +330,8 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
-		# create new dataframe with incremented saturation
-		df_duplicated = df_filtered.assign(saturation=df_filtered['counter'] - 1)
+		# create new dataframe with incremented counter
+		df_duplicated = df_filtered.assign(counter=df_filtered['counter'] - 1)
 
 		# concatenate original dataframe with new dataframe
 		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
@@ -351,7 +351,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
-	    # yaxis_title_text = "saturation",
+	    # yaxis_title_text = "counter",
 	    template = "plotly_dark",
 	    
 		xaxis_range = [0, data['duration'] + 1],
@@ -462,8 +462,8 @@ def plot_leaky_bucket(data: dict, title_append=''):
 
 		df_filtered = window_df.loc[df['status'] == 'OK']
 
-		# create new dataframe with incremented saturation
-		df_duplicated = df_filtered.assign(saturation=df_filtered['counter'] - 1)
+		# create new dataframe with incremented counter
+		df_duplicated = df_filtered.assign(counter=df_filtered['counter'] - 1)
 
 		# concatenate original dataframe with new dataframe
 		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
@@ -482,7 +482,7 @@ def plot_leaky_bucket(data: dict, title_append=''):
 	fig.update_layout(
 	    title_text = "sliding_window() " + title_append,
 	    xaxis_title_text = "time [s]",
-	    # yaxis_title_text = "saturation",
+	    # yaxis_title_text = "counter",
 	    template = "plotly_dark",
 	    
 		xaxis_range = [0, data['duration'] + 1],
