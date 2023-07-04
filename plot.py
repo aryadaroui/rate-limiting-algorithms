@@ -10,6 +10,13 @@ from main import DURATION, LIMIT
 
 rich.traceback.install()  # prettier traceback
 
+MARGIN = dict(
+			t = 40,
+			b = 20,
+			l = 35,
+			r = 20
+		)
+
 def plot_fixed_window(data: dict, title_append=''):
 	"""Plot the discrete window data"""
 
@@ -50,8 +57,10 @@ def plot_fixed_window(data: dict, title_append=''):
 		    line_dash = "solid",
 		)
 
-		window_df = df[(df['time'] >= window_start) & (df['time'] < window_end)]
-		df_duplicated = window_df.assign(counter=window_df['counter'] - 1)
+		window_df = df[(df['time'] >= window_start) & (df['time'] < window_end) ]
+		# df_duplicated = window_df.assign(counter=window_df['counter'] - 1)
+		df_duplicated = window_df.copy()
+		df_duplicated.loc[df_duplicated['status'] == 'OK', 'counter'] -= 1
 		df_result = pd.concat([window_df, df_duplicated], ignore_index=True).sort_values(['time', 'counter'], ascending=[True, True])
 
 		fig.add_trace(
@@ -122,6 +131,7 @@ def plot_fixed_window(data: dict, title_append=''):
 	    title_text = "fixed_window() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    template = "plotly_dark",
+		margin = MARGIN
 	)
 	return fig
 
@@ -226,6 +236,7 @@ def plot_enforced_avg(data: dict, title_append=''):
 	    xaxis_title_text = "time [s]",
 	    # yaxis_title_text = "",
 	    template = "plotly_dark",
+	    margin = MARGIN
 	)
 
 	get_num_oks(df, 1000, fig )
@@ -358,6 +369,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	    
 		xaxis_range = [0, data['duration'] + 1],
 		yaxis_range = [-1, 10],
+		margin = MARGIN
 	)
 
 	get_num_oks(df, data['window_length_ms'], fig )
@@ -482,13 +494,14 @@ def plot_leaky_bucket(data: dict, title_append=''):
 		)
 
 	fig.update_layout(
-	    title_text = "sliding_window() " + title_append,
+	    title_text = "leaky_bucket() " + title_append,
 	    xaxis_title_text = "time [s]",
 	    # yaxis_title_text = "counter",
 	    template = "plotly_dark",
 	    
 		xaxis_range = [0, data['duration'] + 1],
 		yaxis_range = [-1, 10],
+		margin = MARGIN
 	)
 
 	get_num_oks(df, data['window_length_ms'], fig)
@@ -526,13 +539,13 @@ def get_num_oks(df, window_len_ms: float, fig):
 			y = df['num_oks'],
 			name = "num OKs",
 			line=dict(shape='hv', color='yellow'),
-			mode = "lines+markers",
+			mode = "lines",
 			line_color = "yellow",
 			opacity = 0.7
 		)
 	)
 
-def figs_to_subplot(figs: list[go.Figure], **kwargs):
+def figs_to_subplot(figs: list[go.Figure], title: str, **kwargs):
 	subplot = make_subplots(
 		rows=len(figs),
 		cols=1,
@@ -556,7 +569,9 @@ def figs_to_subplot(figs: list[go.Figure], **kwargs):
 	    template = "plotly_dark",
 	    xaxis_range = [0, DURATION + 1],
 	    # yaxis_range = [-1, LIMIT * 2],
-	    legend=dict(groupclick="toggleitem")
+	    legend=dict(groupclick="toggleitem"),
+	    title_text = title,
+	    margin = MARGIN
 	)
 
 	subplot.update_xaxes(title_text="time [s]", row=len(figs), col=1)

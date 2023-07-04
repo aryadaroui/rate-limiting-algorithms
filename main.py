@@ -9,14 +9,15 @@ from typing import Callable
 from rate_limiters import *
 import globals
 
+
 def generate_random_times(num: int, duration: float, start_time: float = 0.0) -> list:
     """
     Generates a list of `num` random times between `start_time` and `start_time + duration`.
 
     Args:
-        num (int): The number of random times to generate.
-        duration (float): The duration of the time range to generate random times within.
-        start_time (float, optional): The start time of the time range to generate random times within. Defaults to 0.0.
+        `num` (int): The number of random times to generate.
+        `duration` (float): The duration of the time range to generate random times within.
+        `start_time` (float, optional): The start time of the time range to generate random times within. Defaults to 0.0.
 
     Returns:
         list: A list of `num` random times between `start_time` and `start_time + duration`.
@@ -68,25 +69,9 @@ LIMIT = 5  # max # of requests allowed per window
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
 uniform_times = generate_times(RPS, DURATION) 
-random_times = generate_random_times(50, 5)
-cross_window_times = [
-	100,
-	700,
-	800,
-	900,
-	1000,
-	1100,
-	1200,
-	1300,
-	1400,
-	1500,
-	1600,
-	1700,
-	1800,
-	1900,
-	2000,
-	2100
-]
+random_times = generate_random_times(int(DURATION * RPS), DURATION)
+cross_window_times = [x for x in uniform_times if x < 200 or x > 700]
+
 bursts_times = [
 	100,
 	110,
@@ -109,9 +94,9 @@ bursts_times = [
 	7099
 ]
 
-def experiment_batch(limiters: list, single_plots: bool, subplots: bool):
+def experiment_batch(title: str, limiters: list[Callable], single_plots: bool, subplots: bool, json: bool, file_append=''):
 	
-	figs = []
+	figs: list = []
 	subplot_titles = []
 
 	if fixed_window in limiters:
@@ -137,6 +122,17 @@ def experiment_batch(limiters: list, single_plots: bool, subplots: bool):
 				plot_enforced_avg
 			)
 		)
+	if sliding_window in limiters:
+		subplot_titles.append('Sliding window')
+		figs.append(
+			experiment(
+				sliding_window, {
+					'key': 'global',
+					'limit': LIMIT,
+					'window_length_ms': WINDOW_LENGTH_MS,
+				}, plot_sliding_window
+			)
+		)
 	if leaky_bucket in limiters:
 		subplot_titles.append('Leaky bucket, soft')
 		figs.append(
@@ -160,52 +156,86 @@ def experiment_batch(limiters: list, single_plots: bool, subplots: bool):
 		        }, plot_leaky_bucket
 		    )
 		)
-	if sliding_window in limiters:
-		subplot_titles.append('Sliding window')
-		figs.append(
-			experiment(
-				sliding_window, {
-					'key': 'global',
-					'limit': LIMIT,
-					'window_length_ms': WINDOW_LENGTH_MS,
-				}, plot_sliding_window
-			)
-		)
-	
 
+
+	all_figs = figs_to_subplot(
+		figs,
+		title=title,
+		subplot_titles = subplot_titles,
+		vertical_spacing = 0.05
+	)
+
+	
 	if single_plots:
 		for fig in figs:
 			fig.show()
 
 	if subplots:
-		figs_to_subplot(
-			figs,
-			subplot_titles = subplot_titles,
-			vertical_spacing = 0.05
-		).show()
+		all_figs.show()
+
+	if json:
+		append = '_' + file_append if file_append else ''
+
+		for fig in figs:
+			title = fig.layout.title.text
+
+			if 'soft' in title:
+				filename = f'./{title.split("(")[0]}_soft'
+			elif 'hard' in title:
+				filename = f'./{title.split("(")[0]}_hard'
+			else:
+				filename = f'./{title.split("(")[0]}'
+
+			fig.write_json(f'./{filename}{append}.json')
+
+		all_figs.write_json(f'./subplots{append}.json')
 
 if __name__ == "__main__":
 
 	TIMES_MS = uniform_times
 	experiment_batch(
+		f'Rate limiters -- uniform times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
 			fixed_window,
 			enforced_avg,
-			leaky_bucket,
-			sliding_window
+			sliding_window,
+			leaky_bucket
 		],
 		single_plots = False,
-		subplots = True
+		subplots = True,
+		json = True
 	)
 
 	TIMES_MS = random_times
 	experiment_batch(
+		f'Rate limiters -- random times; ~{RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
 			fixed_window,
 			enforced_avg,
-			leaky_bucket,
-			sliding_window
+			sliding_window,
+			leaky_bucket
 		],
 		single_plots = False,
-		subplots = True
+		subplots = False,
+		json = False,
+		file_append = 'random'
 	)
+
+	TIMES_MS = cross_window_times
+	experiment_batch(
+		f'Rate limiters -- cross-window times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
+		[
+			fixed_window,
+			enforced_avg,
+			sliding_window,
+			leaky_bucket
+		],
+		single_plots = False,
+		subplots = True,
+		json = True,
+		file_append = 'cross_window'
+	)
+
+
+
+a = fixed_window('a', 5, 1000) 

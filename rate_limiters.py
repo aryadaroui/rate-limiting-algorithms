@@ -8,8 +8,31 @@
 
 import math
 import globals  # TODO: rename this to experiment_globals
+from typing import Literal
+from dataclasses import dataclass
 
 cache = globals.cache
+
+@dataclass
+class FixedWindowReturn:
+	status: Literal["OK", "DENIED"]
+	counter: int
+
+@dataclass
+class SlidingWindowReturn:
+	status: Literal["OK", "DENIED"]
+	counter: int
+	new: bool
+
+@dataclass
+class EnforcedAvgReturn:
+	status: Literal["OK", "DENIED"]
+
+@dataclass
+class LeakyBucketReturn:
+	status: Literal["OK", "DENIED"]
+	counter: int
+	new: bool
 
 def fixed_window(key: str, limit: float, window_length_ms: float = 1000) -> dict:
 	'''Rate limits requests for target using fixed window.
@@ -54,10 +77,8 @@ def enforced_avg(key: str, limit_rps: float):
 
 def sliding_window(key: str, limit: float, window_length_ms: float = 1000):
 
-	entry: dict = cache.get(key)
-
-	if entry is not None:  # cache entry exists
-		times: list = entry
+	times: list = cache.get(key)
+	if times is not None:  # cache entry exists
 
 		# remove all times that are outside the window
 		times = [time for time in times if globals.CURRENT_TIME - time < window_length_ms]
@@ -76,32 +97,29 @@ def sliding_window(key: str, limit: float, window_length_ms: float = 1000):
 def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
 
 	if mode == 'soft':
-		rate = limit
+		leak_rate = limit # leak at limit-many requests per window
 	elif mode == 'hard':
-		rate = 1
+		leak_rate = 1 # leak at 1 request per window
 	else:
-		raise ValueError('Invalid mode')
+		raise ValueError(f'Invalid mode: {mode}')
 
 	entry: dict = cache.get(key)
 
 	if entry is not None:  # cache entry exists
 
+		# unpack the cache entry because `['key']` notation is ugly
 		counter = entry['counter']
 		time = entry['time']
 
-		delta_time_s = (globals.CURRENT_TIME - time) / 1000  # time in seconds since last request
-		window_length_s = window_length_ms / 1000  # window length in seconds
-
-
-
-		counter = max(counter - (delta_time_s * rate) / window_length_s, 0)  # steady state limit
+		delta_time_ms = (globals.CURRENT_TIME - time)  # time since last request
+		counter = max(counter - (delta_time_ms * leak_rate) / window_length_ms, 0) # get the extrapolated counter value
 
 		if counter + 1 < limit:  # increment the counter
 			cache.set(
 				key, {
 					'counter': counter + 1,
 					'time': globals.CURRENT_TIME
-				}, (counter + 1) * 1000 / rate
+				}, (counter + 1) * 1000 / leak_rate
 			)
 			
 			# set the target cache entry with ttl
@@ -114,6 +132,6 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 			key, {
 				'counter': 1,
 				'time': globals.CURRENT_TIME
-			}, window_length_ms / rate
+			}, window_length_ms / leak_rate
 		)  # set the target cache entry with ttl
 		return {"status": "OK", "counter": 1, "new": True}
