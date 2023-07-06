@@ -1,5 +1,5 @@
-from remote_cache import *
-from my_datetime import *
+from dummy_cache import *
+from dummy_time import *
 
-cache = RemoteCache()
-datetime = MyDateTime(1, 1, mode='uniform') # default values, will be overwritten in main.py
+dummy_cache = DummyCache()
+dummy_time = DummyTime(1, 1, mode='uniform') # default values, will be overwritten in main.py

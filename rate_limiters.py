@@ -7,7 +7,7 @@
 # You may remove this comment block, but you may want to leave link to blog post above.
 #-------------------------------------------------------------------------------------
 
-from experiment_globals import cache, datetime
+from experiment_globals import dummy_cache, dummy_time
 from typing import Literal
 from dataclasses import dataclass
 
@@ -52,50 +52,50 @@ def fixed_window(key: str, limit: float, window_length_ms: float = 1000) -> dict
     returns: A dictionary containing `status` "OK" or "DENIED"; `counter` is the number of requests made in the current window; if 0 then the target did not exist in the cache (i.e. first request).
     '''
 
-	counter = cache.get(key)
+	counter = dummy_cache.get(key)
 
 	if counter is not None:  # target cache entry exists
 		# cache.incr(key)  # incr() does not reset ttl (just like in Redis)
 
 		if counter < limit:
-			cache.incr(key)  # incr() does not reset ttl (just like in Redis)
+			dummy_cache.incr(key)  # incr() does not reset ttl (just like in Redis)
 			return {"status": "OK", "counter": counter + 1}
 		else:  # we hit limit
 			return {"status": "DENIED", "counter": counter}
 
 	else:  # target cache entry does not exist
-		cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
+		dummy_cache.set(key, 1, window_length_ms)  # set the target cache entry with ttl
 		return {"status": "OK", "counter": 1}  # should this be 1?
 
 def enforced_avg(key: str, limit_rps: float):
 	'''Rate limits requests for target using exclusion window. Could also be described as enforced average'''
 	exclusion_window = 1000 / limit_rps
 
-	cache_target = cache.get(key)
+	cache_target = dummy_cache.get(key)
 
 	if cache_target is not None:  # target cache entry exists
 		return {"status": "DENIED"}
 	else:  # target cache entry does not exist
-		cache.set(key, 1, exclusion_window)  # set the target cache entry with ttl
+		dummy_cache.set(key, 1, exclusion_window)  # set the target cache entry with ttl
 		return {"status": "OK"}
 
 def sliding_window(key: str, limit: float, window_length_ms: float = 1000):
 
-	times: list = cache.get(key)
+	times: list = dummy_cache.get(key)
 	if times is not None:  # cache entry exists
 
 		# remove all times that are outside the window
-		times = [time for time in times if datetime.now() - time < window_length_ms]
+		times = [time for time in times if dummy_time.now() - time < window_length_ms]
 
 		if len(times) < limit:
-			times.append(datetime.now())
-			cache.set(key, times, window_length_ms)
+			times.append(dummy_time.now())
+			dummy_cache.set(key, times, window_length_ms)
 			return {"status": "OK", "counter": len(times), "new": False}
 		else:
 			return {"status": "DENIED", "counter": len(times), "new": False}
 
 	else:
-		cache.set(key, [datetime.now()], window_length_ms)
+		dummy_cache.set(key, [dummy_time.now()], window_length_ms)
 		return {"status": "OK", "counter": 1, "new": True}
 
 def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
@@ -107,7 +107,7 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 	else:
 		raise ValueError(f'Invalid mode: {mode}')
 
-	entry: dict = cache.get(key)
+	entry: dict = dummy_cache.get(key)
 
 	if entry is not None:  # cache entry exists
 
@@ -115,14 +115,14 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 		counter = entry['counter']
 		time = entry['time']
 
-		delta_time_ms = (datetime.now() - time)  # time since last request
+		delta_time_ms = (dummy_time.now() - time)  # time since last request
 		counter = max(counter - (delta_time_ms * leak_rate) / window_length_ms, 0) # get the extrapolated counter value
 
 		if counter + 1 < limit:  # increment the counter
-			cache.set(
+			dummy_cache.set(
 				key, {
 					'counter': counter + 1,
-					'time': datetime.now()
+					'time': dummy_time.now()
 				}, (counter + 1) * 1000 / leak_rate
 			)
 			
@@ -132,10 +132,10 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 			return {"status": "DENIED", "counter": counter, "new": False}
 
 	else:  # cache entry does not exist
-		cache.set(
+		dummy_cache.set(
 			key, {
 				'counter': 1,
-				'time': datetime.now()
+				'time': dummy_time.now()
 			}, window_length_ms / leak_rate
 		)  # set the target cache entry with ttl
 		return {"status": "OK", "counter": 1, "new": True}

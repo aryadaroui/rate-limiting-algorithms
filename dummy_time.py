@@ -1,6 +1,6 @@
 import random
 
-class MyDateTime:
+class DummyTime:
 	''' Simulated datetime for experiments.
 	'''
 	def __init__(self, rps: float, duration: float, mode='uniform'):

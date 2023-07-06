@@ -1,7 +1,7 @@
 from typing import Any
 import experiment_globals
 
-class RemoteCache:
+class DummyCache:
 	''' A class that mimics a remote cache data store.
     '''
 
@@ -21,7 +21,7 @@ class RemoteCache:
         '''
 		expiration = None
 		if ttl:
-			expiration = experiment_globals.datetime.now() + ttl
+			expiration = experiment_globals.dummy_time.now() + ttl
 
 		self.data[key] = {"value": value, "expiration": expiration}
 
@@ -35,7 +35,7 @@ class RemoteCache:
 		data = self.data.get(key)
 		if not data:
 			return None
-		if 'expiration' in data and data["expiration"] <= experiment_globals.datetime.now():
+		if 'expiration' in data and data["expiration"] <= experiment_globals.dummy_time.now():
 			del self.data[key]
 			return None
 		return data["value"]

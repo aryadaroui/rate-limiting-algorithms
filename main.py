@@ -7,7 +7,7 @@ import random
 from plot import *
 from typing import Callable
 from rate_limiters import *
-from experiment_globals import cache, datetime
+from experiment_globals import dummy_cache, dummy_time
 
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
@@ -21,7 +21,7 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 	# rate limiter specific experiment data
 	data.update(rate_limiter_args)
 
-	for time in datetime:
+	for time in dummy_time:
 		output = rate_limiter(**rate_limiter_args)
 		output["time_ms"] = time
 		data["plot"].append(output)
@@ -35,8 +35,8 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 		mode = ''
 
 	fig = plotter(data, mode + ' Py')
-	cache.reset()
-	datetime.reset()
+	dummy_cache.reset()
+	dummy_time.reset()
 	return fig
 
 def experiment_batch(title: str, limiters: list[Callable], single_plots: bool, subplots: bool, json: bool, file_append=''):
@@ -142,7 +142,7 @@ WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
 if __name__ == "__main__":
 
-	datetime.change_times(RPS, DURATION, mode='uniform')
+	dummy_time.change_times(RPS, DURATION, mode='uniform')
 	experiment_batch(
 		f'Rate limiters -- uniform times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 		json = False
 	)
 
-	datetime.change_times(RPS, DURATION, mode='random')
+	dummy_time.change_times(RPS, DURATION, mode='random')
 	experiment_batch(
 		f'Rate limiters -- random times; ~{RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 		file_append = 'random'
 	)
 
-	datetime.change_times(RPS, DURATION, mode='cross_window')
+	dummy_time.change_times(RPS, DURATION, mode='cross_window')
 	experiment_batch(
 		f'Rate limiters -- cross-window times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
