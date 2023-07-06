@@ -1,5 +1,5 @@
 from typing import Any
-import globals
+import experiment_globals
 
 class RemoteCache:
 	''' A class that mimics a remote cache data store.
@@ -21,7 +21,7 @@ class RemoteCache:
         '''
 		expiration = None
 		if ttl:
-			expiration = globals.CURRENT_TIME + ttl
+			expiration = experiment_globals.CURRENT_TIME + ttl
 
 		self.data[key] = {"value": value, "expiration": expiration}
 
@@ -35,7 +35,7 @@ class RemoteCache:
 		data = self.data.get(key)
 		if not data:
 			return None
-		if 'expiration' in data and data["expiration"] <= globals.CURRENT_TIME:
+		if 'expiration' in data and data["expiration"] <= experiment_globals.CURRENT_TIME:
 			del self.data[key]
 			return None
 		return data["value"]

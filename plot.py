@@ -1,3 +1,6 @@
+'''Plotting functions used for https://aryadee.dev/blog/rate-limiting-algorithms
+'''
+
 import sys
 import json
 import pandas as pd
@@ -5,8 +8,7 @@ import rich.traceback
 from rich.pretty import pprint
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np
-from main import DURATION, LIMIT
+from main import DURATION # note: circular import
 
 rich.traceback.install()  # prettier traceback
 
@@ -18,7 +20,7 @@ MARGIN = dict(
 		)
 
 def plot_fixed_window(data: dict, title_append=''):
-	"""Plot the discrete window data"""
+	"""Plot the fixed window data"""
 
 
 	df = pd.DataFrame(data['plot'])
@@ -136,7 +138,7 @@ def plot_fixed_window(data: dict, title_append=''):
 	return fig
 
 def plot_enforced_avg(data: dict, title_append=''):
-	"""Plot the exclusion window data"""
+	"""Plot the enforced average data"""
 
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
@@ -377,7 +379,7 @@ def plot_sliding_window(data: dict, title_append: str = ""):
 	return fig	
 
 def plot_leaky_bucket(data: dict, title_append=''):
-	"""Plot the sliding window data."""
+	"""Plot the leaky bucket data."""
 	df = pd.DataFrame(data['plot'])
 	fig = go.Figure()
 
@@ -509,7 +511,9 @@ def plot_leaky_bucket(data: dict, title_append=''):
 	return fig
 
 def get_num_oks(df, window_len_ms: float, fig):
-	''' handles everything input in ms, but plots in s.
+	''' gets the number OKs in the last window_len_ms and adds it to the figure.
+
+	note: handles everything input in ms, but plots in s.
 	'''
 
 	df = df[['time_ms', 'status']]
@@ -546,6 +550,8 @@ def get_num_oks(df, window_len_ms: float, fig):
 	)
 
 def figs_to_subplot(figs: list[go.Figure], title: str, **kwargs):
+	''' takes a list of figures and returns a subplot with them all in it.
+	'''
 	subplot = make_subplots(
 		rows=len(figs),
 		cols=1,
@@ -579,7 +585,7 @@ def figs_to_subplot(figs: list[go.Figure], title: str, **kwargs):
 	return subplot
 
 def debugger_is_active() -> bool:
-	"""Return if the debugger is currently active"""
+	"""Return true if the debugger is currently active"""
 	return hasattr(sys, 'gettrace') and sys.gettrace() is not None
 
 if __name__ == "__main__":

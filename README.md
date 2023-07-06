@@ -1,18 +1,16 @@
 # rate-limiting-algorithms
 
-Examples of simple rate limiting algorithms in TypeScript and Python.
+Examples of simple rate limiting algorithms in TypeScript and Python. This was made for my blog post https://aryadee.dev/blog/rate-limiting-algorithms, but they've been written generically so that you can use them for yourself with minor tweaking.
+
+
 
 **Work in progress, but I've obviously still published this repo publicly. If you're reading this message, it means I haven't cleaned things up yet. Use at your own peril.**
 
 ## Usage
 
-This was created to accompany a blog post on rate limiting algorithms, but they've been written in a non-specific way, so you can easily use them for yourself. For more details about their characteristics see [~post not done~].
+##### These algorithms reside in functions in[ `rate_limiters.ts`]() and [`rate_limiters.py`]().
 
----
-
-##### These algorithms reside in functions in `rate_limiters.ts` and `rate_limiters.py`.
-
-**NOTE**: I use a local dummy `RemoteCache` class to emulate a remote cache because that's a common implementation for rate limiting [~talk about how RemoteCache mimics Redis behavior~]. _You must replace this with your own data storage service / method_. Similarly, the Python implementation uses a global `CURRENT_TIME` variable instead of the `datetime` package, so you'll have to change that too.
+⚠️ **NOTE** ⚠️: I use a local dummy `RemoteCache` class to emulate a remote cache because that's a common implementation for rate limiting. _You must replace this with your own data storage service / method_. Similarly, the Python implementation uses a global `CURRENT_TIME` variable instead of the `datetime` package, so you'll have to change that too.
 
 ### Example
 
@@ -50,16 +48,13 @@ The TypeScript experiments are run in real-time with worker threads, and spawn a
 
 | Rate limiting algorithm             | Comment | TypeScript | Python |
 | ----------------------------------- | :--------: | :----: | :---------------------------------: |
-| `discrete_window(...)` |     burst inducing     |   ✅   | ✅ |
-| `exclusion_window(...)` |     burst intolerant. degenerated discrete window     |   ⚠️   | ✅ |
-| `sliding_window(...)` |     burst inducing. high storage/proc cost     |   ⚠️   | ✅ |
-| `extrapolateding_window(mode='soft')` |     ⭐️ <u>burst tolerant</u>; steady-state limiting ⭐️     |   ⚠️   | ✅ |
-| `extrapolating_window(mode='hard')` |     burst intolerant; transient limiting      |     ⚠️      |   ✅    |
-| Leaky bucket                               |           not really a rate limiter           |     ❌      |   ❌    |
+| `fixed_window(...)` |     Cross-window flaw     |   ✅   | ✅ |
+| `enforced_avg(...)` |     No simultaneous requests     |   ⚠️   | ✅ |
+| `sliding_window(...)` |     expensive data storage     |   ⚠️   | ✅ |
+| `leaky_bucket(..., mode='soft')` |     ⭐️ slightly overshoots on fill ⭐️     |   ⚠️   | ✅ |
+| `leaky_bucket(..., mode='hard')` |     Punitive steady state     |     ⚠️      |   ✅    |
 
-Leaky bucket is omitted because it's a traffic shaper; it modifies transmission rate rather than limiting (denying) traffic. However, you can get similar behavior out of the `extrapolating_window`.
-
- `extrapolating_window(mode='soft')` is the most flexible. Under continuous load, it will rate limit at steady state, and will allow transients of a maximum size of 2x the rate limit.
+ `leaky_bucket(..., mode='soft')` is the most flexible. Under continuous load, it will rate limit at steady state with a uniform distribution, and will allow transients of a maximum size of $2\times \text{limit} - 1$.
 
 ## Can I install this with NPM or PyPI? (No.)
 
@@ -75,13 +70,11 @@ Realistically, this is a small amount of code; just copy-paste it :-).
 
 MIT License. Attribution appreciated but not required.
 
-You *probably* should link to my blog post in your docstring, though.
+You may want to maintain reference to this repo / blog post since there's no npm or pip package to track.
 
 # Notes for myself
 
-- For package-ability
-  - could make a template class with abstract methods that user implements for their DB access
-    - then they pass an instance of that class in to a generic rate_limiter constructor, which contains the rate limiting functions 
-    - Problem is: need to enforce strict typing on the data access, and every rate limiter has different payloads, so may need new class for each??
-  - as a worst case that wont actually be implemented: user access their DB externally, and then pass in the result to the function.
-    - They'd also have to handle the write externally after the function call too. ugly ugly ugly
+- For package-ability, a template class with abstract methods that user implements for their DB access
+  - then they pass an instance of that class in to a generic `rate_limiter` constructor or function, which contains the desired rate limiting functions 
+
+  - need to enforce strict typing on the data access; every rate limiter has different payloads
