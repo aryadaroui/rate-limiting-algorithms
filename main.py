@@ -7,21 +7,7 @@ import random
 from plot import *
 from typing import Callable
 from rate_limiters import *
-import experiment_globals
-
-def generate_times(rps: float, duration: float, start_time: float = 0.0) -> list:
-    ''' Generates a list of times in milliseconds starting from the given start time. rps is requests per second.'''
-    times_ms = []
-    interval = 1000 / rps
-    for i in range(int(rps * duration)):
-        times_ms.append(start_time + (i + 1) * interval)  # i + 1 to make it not start at 0
-    return times_ms
-
-def generate_random_times(num: int, duration: float, start_time: float = 0.0) -> list:
-    """
-    Generates a list of `num` random times
-    """
-    return sorted([random.uniform(start_time, (start_time + duration) * 1000) for _ in range(num)])
+from experiment_globals import cache, datetime
 
 def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callable):
 
@@ -35,10 +21,9 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 	# rate limiter specific experiment data
 	data.update(rate_limiter_args)
 
-	for time_ms in TIMES_MS:
-		experiment_globals.CURRENT_TIME = time_ms
+	for time in datetime:
 		output = rate_limiter(**rate_limiter_args)
-		output["time_ms"] = time_ms
+		output["time_ms"] = time
 		data["plot"].append(output)
 
 	# pprint(data)
@@ -50,7 +35,8 @@ def experiment(rate_limiter: Callable, rate_limiter_args: dict, plotter: Callabl
 		mode = ''
 
 	fig = plotter(data, mode + ' Py')
-	experiment_globals.cache.reset()
+	cache.reset()
+	datetime.reset()
 	return fig
 
 def experiment_batch(title: str, limiters: list[Callable], single_plots: bool, subplots: bool, json: bool, file_append=''):
@@ -154,13 +140,9 @@ DURATION = 3.0  # duration of experiment in seconds
 LIMIT = 5  # max # of requests allowed per window
 WINDOW_LENGTH_MS = 1000  # size of the time window in milliseconds
 
-uniform_times = generate_times(RPS, DURATION) 
-random_times = generate_random_times(int(DURATION * RPS), DURATION)
-cross_window_times = [x for x in uniform_times if x < 200 or x > 700] # remove time between 200 and 700 ms
-
 if __name__ == "__main__":
 
-	TIMES_MS = uniform_times
+	datetime.change_times(RPS, DURATION, mode='uniform')
 	experiment_batch(
 		f'Rate limiters -- uniform times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
@@ -174,7 +156,7 @@ if __name__ == "__main__":
 		json = False
 	)
 
-	TIMES_MS = random_times
+	datetime.change_times(RPS, DURATION, mode='random')
 	experiment_batch(
 		f'Rate limiters -- random times; ~{RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[
@@ -189,7 +171,7 @@ if __name__ == "__main__":
 		file_append = 'random'
 	)
 
-	TIMES_MS = cross_window_times
+	datetime.change_times(RPS, DURATION, mode='cross_window')
 	experiment_batch(
 		f'Rate limiters -- cross-window times; {RPS} rps, {DURATION} s; limit: {LIMIT} req / {WINDOW_LENGTH_MS} ms',
 		[

@@ -21,7 +21,7 @@ class RemoteCache:
         '''
 		expiration = None
 		if ttl:
-			expiration = experiment_globals.CURRENT_TIME + ttl
+			expiration = experiment_globals.datetime.now() + ttl
 
 		self.data[key] = {"value": value, "expiration": expiration}
 
@@ -35,7 +35,7 @@ class RemoteCache:
 		data = self.data.get(key)
 		if not data:
 			return None
-		if 'expiration' in data and data["expiration"] <= experiment_globals.CURRENT_TIME:
+		if 'expiration' in data and data["expiration"] <= experiment_globals.datetime.now():
 			del self.data[key]
 			return None
 		return data["value"]

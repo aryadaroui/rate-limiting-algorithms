@@ -7,11 +7,12 @@
 # You may remove this comment block, but you may want to leave link to blog post above.
 #-------------------------------------------------------------------------------------
 
-import experiment_globals
+from experiment_globals import cache, datetime
 from typing import Literal
 from dataclasses import dataclass
 
-cache = experiment_globals.cache
+# cache = experiment_globals.cache
+# datetime = experiment_globals.datetime
 
 # these dataclasses weren't used because of clarity in blog post
 # but I encourage you to use them in your own code
@@ -84,17 +85,17 @@ def sliding_window(key: str, limit: float, window_length_ms: float = 1000):
 	if times is not None:  # cache entry exists
 
 		# remove all times that are outside the window
-		times = [time for time in times if experiment_globals.CURRENT_TIME - time < window_length_ms]
+		times = [time for time in times if datetime.now() - time < window_length_ms]
 
 		if len(times) < limit:
-			times.append(experiment_globals.CURRENT_TIME)
+			times.append(datetime.now())
 			cache.set(key, times, window_length_ms)
 			return {"status": "OK", "counter": len(times), "new": False}
 		else:
 			return {"status": "DENIED", "counter": len(times), "new": False}
 
 	else:
-		cache.set(key, [experiment_globals.CURRENT_TIME], window_length_ms)
+		cache.set(key, [datetime.now()], window_length_ms)
 		return {"status": "OK", "counter": 1, "new": True}
 
 def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 'soft') -> dict:
@@ -114,14 +115,14 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 		counter = entry['counter']
 		time = entry['time']
 
-		delta_time_ms = (experiment_globals.CURRENT_TIME - time)  # time since last request
+		delta_time_ms = (datetime.now() - time)  # time since last request
 		counter = max(counter - (delta_time_ms * leak_rate) / window_length_ms, 0) # get the extrapolated counter value
 
 		if counter + 1 < limit:  # increment the counter
 			cache.set(
 				key, {
 					'counter': counter + 1,
-					'time': experiment_globals.CURRENT_TIME
+					'time': datetime.now()
 				}, (counter + 1) * 1000 / leak_rate
 			)
 			
@@ -134,7 +135,7 @@ def leaky_bucket(key: str, limit: float, window_length_ms: float = 1000, mode = 
 		cache.set(
 			key, {
 				'counter': 1,
-				'time': experiment_globals.CURRENT_TIME
+				'time': datetime.now()
 			}, window_length_ms / leak_rate
 		)  # set the target cache entry with ttl
 		return {"status": "OK", "counter": 1, "new": True}
