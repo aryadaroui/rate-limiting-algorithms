@@ -8,7 +8,7 @@ Examples of simple rate limiting algorithms in TypeScript and Python. This was m
 
 ## Usage
 
-##### These algorithms reside in functions in[ `rate_limiters.ts`]() and [`rate_limiters.py`]().
+These algorithms reside in functions in[ `rate_limiters.ts`]() and [`rate_limiters.py`]().
 
 ### ⚠️ Adjustments
 
@@ -40,18 +40,22 @@ def request_handler(request_ip: str):
 
 ### Experiments / testing
 
-To run the experiments:
+The TypeScript experiments are run in real-time with worker threads, and spawn a Python process to plot the data. The Python experiments are run statically.
+
+#### TypeScript
 
 ```bash
-npm install # to install dependencies
+pip install -r requirements.txt # install dependencies in requirements.txt
+npm install # to install dependencies in package.json
 npm run start # to run the realtime TS experiments
 ```
 
-```bash
-python3 main.py # to run the Py experiments
-```
+#### Python
 
-The TypeScript experiments are run in real-time with worker threads, and spawn a Python process to plot the data. The Python experiments are run statically.
+```bash
+pip install -r requirements.txt # install dependencies in requirements.txt
+python main.py # to run the Py experiments
+```
 
 ## Coverage
 
@@ -75,15 +79,12 @@ For now, this is a small amount of code; just copy-paste it :-).
 
 [~Plots will go here~]
 
+- Uniform times
+- Random times
+- Cross-window times
+
 ## License
 
 MIT License. Attribution appreciated but not required.
 
 You may want to maintain reference to this repo / blog post since there's no npm or pip package to track.
-
-# Notes for myself
-
-- For package-ability, a template class with abstract methods that user implements for their DB access
-  - then they pass an instance of that class in to a generic `rate_limiter` constructor or function, which contains the desired rate limiting functions 
-
-  - need to enforce strict typing on the data access; each limiter has slightly different returns

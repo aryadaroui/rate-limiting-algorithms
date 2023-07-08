@@ -8,7 +8,6 @@ import rich.traceback
 from rich.pretty import pprint
 from plotly import graph_objects as go
 from plotly.subplots import make_subplots
-from main import DURATION # note: circular import
 
 rich.traceback.install()  # prettier traceback
 
@@ -549,7 +548,7 @@ def get_num_oks(df, window_len_ms: float, fig):
 		)
 	)
 
-def figs_to_subplot(figs: list[go.Figure], title: str, **kwargs):
+def figs_to_subplot(figs: list[go.Figure], title: str, duration:float, **kwargs):
 	''' takes a list of figures and returns a subplot with them all in it.
 	'''
 	subplot = make_subplots(
@@ -573,7 +572,7 @@ def figs_to_subplot(figs: list[go.Figure], title: str, **kwargs):
 
 	subplot.update_layout(
 	    template = "plotly_dark",
-	    xaxis_range = [0, DURATION + 1],
+	    xaxis_range = [0, duration + 1],
 	    # yaxis_range = [-1, LIMIT * 2],
 	    legend=dict(groupclick="toggleitem"),
 	    title_text = title,
@@ -591,7 +590,7 @@ def debugger_is_active() -> bool:
 if __name__ == "__main__":
 
 	if debugger_is_active():
-		file_path = "./data/discrete_window.json"
+		file_path = "./data/fixed_window.json"
 	else:
 		if len(sys.argv) < 2:
 			print("Please provide the name of the JSON file as a command line argument.")
@@ -604,7 +603,7 @@ if __name__ == "__main__":
 	filename = file_path.split("/")[-1].split(".")[0]
 
 	match filename:
-		case "discrete_window":
-			plot_fixed_window(data)
+		case "fixed_window":
+			plot_fixed_window(data).show()
 		case _:
 			raise ValueError(f"No matching plot function for filename: {filename}")

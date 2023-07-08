@@ -106,6 +106,7 @@ def experiment_batch(title: str, limiters: list[Callable], single_plots: bool, s
 	all_figs = figs_to_subplot(
 		figs=figs,
 		title=title,
+		duration=DURATION,
 		subplot_titles = subplot_titles,
 		vertical_spacing = 0.05
 	)
