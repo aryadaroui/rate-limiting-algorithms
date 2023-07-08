@@ -59,13 +59,13 @@ python main.py # to run the Py experiments
 
 ## Coverage
 
-| Rate limiting algorithm             | Comment | TypeScript | Python |
-| ----------------------------------- | :--------: | :----: | :---------------------------------: |
-| `fixed_window(...)` |     Cross-window overshoot     |   ✅   | ✅ |
-| `enforced_avg(...)` |     strict; no simultaneity     |   ⚠️   | ✅ |
-| `sliding_window(...)` |     expensive data storage     |   ⚠️   | ✅ |
-| `leaky_bucket(..., mode='soft')` |     overshoots on bucket fill     |   ⚠️   | ✅ |
-| `leaky_bucket(..., mode='hard')` |     Punitive steady state     |     ⚠️      |   ✅    |
+| Rate limiting algorithm             | Comment |
+| ----------------------------------- | :--------: 
+| `fixed_window(...)` |     Cross-window overshoot     | 
+| `enforced_avg(...)` |     strict; no simultaneity     |  
+| `sliding_window(...)` |     expensive data storage     | 
+| `leaky_bucket(..., mode='soft')` |     overshoots on bucket fill     |   
+| `leaky_bucket(..., mode='hard')` |     Punitive steady state     |   
 
  `leaky_bucket(..., mode='soft')` is the most flexible. Under continuous load, it will rate limit at steady state with a uniform distribution, and will allow transients of a maximum size of $2\times \text{limit} - 1$.
 
